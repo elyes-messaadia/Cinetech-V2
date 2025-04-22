@@ -1,19 +1,5 @@
 @import "tailwindcss";
 
-@theme {
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1536px;
-  
-  --color-primary: #f47521;
-  --color-primary-dark: #e05a00;
-  --color-background: #242424;
-  --color-background-dark: #1a1a1a;
-  --color-background-light: #2e2e2e;
-}
-
 :root {
   font-family: Inter, system-ui, sans-serif;
   line-height: 1.5;
