@@ -8,7 +8,7 @@ cinetech/
 │       ├── pages/             # Pages (Home, Films, Series, Detail, Login, etc.)
 │       ├── routes/            # React Router config
 │       ├── context/           # Contexte global (auth, favoris, etc.)
-│       ├── services/          # Appels à l’API TMDb + API back-end
+│       ├── services/          # Appels à l'API TMDb + API back-end
 │       ├── App.jsx
 │       └── main.jsx
 │
@@ -19,8 +19,8 @@ cinetech/
 │   ├── models/               # Accès BDD (User.js, Favorite.js, Comment.js)
 │   ├── routes/               # Routes Express (auth.js, users.js, films.js, etc.)
 │   ├── utils/                # Fonctions réutilisables (hash, jwt, etc.)
-│   ├── .env                  # Variables d’environnement
-│   ├── server.js             # Point d’entrée Express
+│   ├── .env                  # Variables d'environnement
+│   ├── server.js             # Point d'entrée Express
 │   └── package.json
 │
 ├── README.md
