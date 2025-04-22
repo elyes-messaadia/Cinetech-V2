@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  --color-primary: #f47521;
+  --color-primary-dark: #e05a00;
+  --color-background: #242424;
+  --color-background-dark: #1a1a1a;
+  --color-background-light: #2e2e2e;
+}
+
 :root {
   font-family: Inter, system-ui, sans-serif;
   line-height: 1.5;
@@ -23,7 +37,22 @@ body {
 
 @layer components {
   .container-custom {
-    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    width: 100%;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    
+    @media (min-width: 640px) {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+    
+    @media (min-width: 1024px) {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
   }
   
   .btn {
