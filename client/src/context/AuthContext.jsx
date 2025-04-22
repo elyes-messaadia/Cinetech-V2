@@ -26,10 +26,30 @@ export const AuthProvider = ({ children }) => {
           return;
         }
         
-        // Vérifier la validité du token avec le serveur
-        const userData = await authService.verifyToken();
-        setUser(userData);
-        setIsAuthenticated(true);
+        // Vérifier si le token est bien formé (structure JWT)
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          console.error('Token mal formé:', token);
+          localStorage.removeItem('token');
+          setLoading(false);
+          return;
+        }
+        
+        try {
+          // Vérifier la validité du token avec le serveur
+          const userData = await authService.verifyToken();
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (verifyErr) {
+          console.error('Erreur lors de la vérification du token:', verifyErr);
+          // Si l'erreur est 401 (non autorisé) ou 500 (erreur serveur), supprimer le token
+          if (verifyErr.response && (verifyErr.response.status === 401 || verifyErr.response.status === 500)) {
+            console.log('Suppression du token invalide');
+            localStorage.removeItem('token');
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        }
       } catch (err) {
         console.error('Erreur lors de la vérification du token:', err);
         // Supprimer le token invalide

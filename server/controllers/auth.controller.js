@@ -171,7 +171,18 @@ class AuthController {
   static async verifyToken(req, res) {
     // Le middleware auth a déjà vérifié le token
     try {
+      console.log("AuthController.verifyToken - Données utilisateur du token:", req.user);
+      
+      if (!req.user || !req.user.id) {
+        console.error("AuthController.verifyToken - Données utilisateur invalides dans le token");
+        return res.status(400).json({ message: 'Données utilisateur invalides dans le token' });
+      }
+      
+      console.log("AuthController.verifyToken - Recherche de l'utilisateur avec ID:", req.user.id);
+      
       const user = await UserModel.findById(req.user.id);
+      
+      console.log("AuthController.verifyToken - Résultat de la recherche:", user ? "Utilisateur trouvé" : "Utilisateur non trouvé");
       
       if (!user) {
         return res.status(404).json({ message: 'Utilisateur non trouvé' });
@@ -186,8 +197,24 @@ class AuthController {
         }
       });
     } catch (error) {
-      console.error('Erreur lors de la vérification du token:', error);
-      res.status(500).json({ message: 'Erreur lors de la vérification du token' });
+      console.error('Erreur détaillée lors de la vérification du token:', error);
+      console.error('Stack d\'erreur:', error.stack);
+      
+      // Déterminer le type d'erreur pour une meilleure réponse
+      if (error.code && error.code.startsWith('ER_')) {
+        // Erreur SQL
+        console.error('Erreur SQL lors de la vérification du token:', error.code);
+        return res.status(500).json({ 
+          message: 'Erreur de base de données lors de la vérification du token',
+          details: error.message
+        });
+      }
+      
+      // Erreur générique
+      res.status(500).json({ 
+        message: 'Erreur lors de la vérification du token',
+        details: error.message
+      });
     }
   }
 }

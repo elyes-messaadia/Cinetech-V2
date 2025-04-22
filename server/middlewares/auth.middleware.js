@@ -6,7 +6,10 @@ const jwt = require('jsonwebtoken');
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   
+  console.log('Vérification du token - Headers:', req.headers);
+  
   if (!authHeader) {
+    console.log('Vérification du token - Aucun header d\'autorisation trouvé');
     return res.status(401).json({ message: 'Aucun token fourni' });
   }
   
@@ -14,16 +17,32 @@ const verifyToken = (req, res, next) => {
   const token = authHeader.split(' ')[1];
   
   if (!token) {
+    console.log('Vérification du token - Format du token invalide');
     return res.status(401).json({ message: 'Format du token invalide' });
   }
 
   try {
+    console.log('Vérification du token - Tentative de décodage avec secret:', process.env.JWT_SECRET ? 'Secret défini' : 'Secret non défini');
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Vérification du token - Décodage réussi:', { id: decoded.id, email: decoded.email });
+    
     req.user = decoded;
     next();
   } catch (error) {
-    console.error('Erreur d\'authentification:', error);
-    return res.status(401).json({ message: 'Token invalide ou expiré' });
+    console.error('Erreur d\'authentification détaillée:', error.name, error.message);
+    console.error('Stack d\'erreur:', error.stack);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expiré', details: 'Veuillez vous reconnecter' });
+    } else if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Token invalide', details: error.message });
+    }
+    
+    return res.status(401).json({ 
+      message: 'Token invalide ou expiré',
+      details: error.message
+    });
   }
 };
 

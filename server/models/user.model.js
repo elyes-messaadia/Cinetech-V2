@@ -94,15 +94,53 @@ class UserModel {
     try {
       console.log("UserModel.findById - Recherche d'un utilisateur par ID:", id);
       
+      // Vérifier l'argument id
+      if (!id) {
+        console.error("UserModel.findById - ID non valide:", id);
+        throw new Error("ID utilisateur non valide");
+      }
+      
+      // Tester d'abord la connexion à la base de données
+      try {
+        const [pingResult] = await connection.query('SELECT 1 as ping');
+        console.log("UserModel.findById - Test de connexion réussi:", pingResult);
+      } catch (pingError) {
+        console.error("UserModel.findById - Erreur de connexion à la base de données:", pingError);
+        throw new Error("Erreur de connexion à la base de données: " + pingError.message);
+      }
+      
+      // Vérifier si la table existe
+      try {
+        const [tableResult] = await connection.query("SHOW TABLES LIKE 'users'");
+        console.log("UserModel.findById - Vérification de la table users:", tableResult.length ? "Existe" : "N'existe pas");
+        
+        if (tableResult.length === 0) {
+          console.error("UserModel.findById - La table 'users' n'existe pas");
+          throw new Error("La table 'users' n'existe pas dans la base de données");
+        }
+      } catch (tableError) {
+        console.error("UserModel.findById - Erreur lors de la vérification de la table:", tableError);
+        throw tableError;
+      }
+      
+      // Effectuer la requête
       const [rows] = await connection.query(
         'SELECT id, username, email, created_at, updated_at FROM users WHERE id = ?',
         [id]
       );
       
       console.log("UserModel.findById - Résultat:", rows.length ? "Utilisateur trouvé" : "Aucun utilisateur trouvé");
+      
+      if (rows.length === 0) {
+        console.log("UserModel.findById - Aucun utilisateur trouvé avec l'ID:", id);
+      } else {
+        console.log("UserModel.findById - Utilisateur trouvé:", { id: rows[0].id, username: rows[0].username });
+      }
+      
       return rows.length ? rows[0] : null;
     } catch (error) {
       console.error("UserModel.findById - Erreur lors de la recherche par ID:", error);
+      console.error("UserModel.findById - Stack d'erreur:", error.stack);
       throw error;
     }
   }
