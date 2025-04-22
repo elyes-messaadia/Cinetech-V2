@@ -11,57 +11,95 @@ class CommentController {
    */
   static async createComment(req, res) {
     try {
-      const { media_id, media_type, content, parent_id, is_spoiler } = req.body;
+      console.log('Début de createComment avec body:', req.body);
+      const { media_id, mediaId, media_type, mediaType, content, parent_id, parentId, is_spoiler, isSpoiler } = req.body;
       const user_id = req.user.id;
       
+      // Adapter les paramètres selon les différentes conventions de nommage possibles
+      const finalMediaId = media_id || mediaId;
+      const finalMediaType = media_type || mediaType;
+      const finalParentId = parent_id || parentId || null;
+      const finalIsSpoiler = is_spoiler || isSpoiler || false;
+      
+      console.log('Paramètres adaptés:', { 
+        finalMediaId, 
+        finalMediaType, 
+        finalParentId, 
+        finalIsSpoiler, 
+        content 
+      });
+      
       // Validation des données
-      if (!media_id || !media_type || !content) {
+      if (!finalMediaId || !finalMediaType || !content) {
+        console.log('Validation échouée: champs requis manquants');
         return res.status(400).json({ 
-          message: 'media_id, media_type et content sont requis' 
+          message: 'media_id, media_type et content sont requis',
+          received: { mediaId: finalMediaId, mediaType: finalMediaType, content }
         });
       }
       
       // Vérifier que media_type est valide ('movie' ou 'tv')
-      if (media_type !== 'movie' && media_type !== 'tv') {
+      if (finalMediaType !== 'movie' && finalMediaType !== 'tv') {
+        console.log(`Type de média invalide: ${finalMediaType}`);
         return res.status(400).json({ 
-          message: 'media_type doit être "movie" ou "tv"' 
+          message: 'media_type doit être "movie" ou "tv"',
+          received: finalMediaType
         });
       }
       
       // Vérifier que le commentaire n'est pas vide
       if (content.trim() === '') {
+        console.log('Commentaire vide rejeté');
         return res.status(400).json({ 
           message: 'Le commentaire ne peut pas être vide' 
         });
       }
       
       // Si c'est une réponse, vérifier que le commentaire parent existe
-      if (parent_id) {
-        const parentComment = await CommentModel.findById(parent_id);
-        if (!parentComment) {
-          return res.status(404).json({ 
-            message: 'Le commentaire parent n\'existe pas' 
+      if (finalParentId) {
+        try {
+          console.log(`Vérification du commentaire parent ${finalParentId}`);
+          const parentComment = await CommentModel.findById(finalParentId);
+          if (!parentComment) {
+            console.log(`Commentaire parent ${finalParentId} non trouvé`);
+            return res.status(404).json({ 
+              message: 'Le commentaire parent n\'existe pas',
+              parentId: finalParentId
+            });
+          }
+        } catch (parentError) {
+          console.error('Erreur lors de la vérification du parent:', parentError);
+          return res.status(500).json({ 
+            message: 'Erreur lors de la vérification du commentaire parent',
+            error: parentError.message
           });
         }
       }
       
       // Créer le commentaire
+      console.log('Tentative de création du commentaire');
       const comment = await CommentModel.create({
         user_id,
-        media_id,
-        media_type,
+        media_id: finalMediaId,
+        media_type: finalMediaType,
         content,
-        parent_id,
-        is_spoiler: is_spoiler || false
+        parent_id: finalParentId,
+        is_spoiler: finalIsSpoiler
       });
+      
+      console.log('Commentaire créé avec succès:', comment);
       
       res.status(201).json({
         message: 'Commentaire créé avec succès',
         comment
       });
+      
     } catch (error) {
-      console.error('Erreur lors de la création du commentaire:', error);
-      res.status(500).json({ message: 'Erreur lors de la création du commentaire' });
+      console.error('Erreur globale lors de la création du commentaire:', error);
+      res.status(500).json({ 
+        message: 'Erreur lors de la création du commentaire',
+        error: error.message
+      });
     }
   }
   

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -13,6 +14,9 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Récupérer l'URL de redirection si elle existe
+  const from = location.state?.from?.pathname || '/profile';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -60,7 +64,8 @@ const LoginForm = () => {
     
     try {
       await login(formData);
-      navigate('/');
+      console.log("Connexion réussie, redirection vers:", from);
+      navigate(from, { replace: true });
     } catch (error) {
       console.error('Erreur de connexion', error);
       setErrors({

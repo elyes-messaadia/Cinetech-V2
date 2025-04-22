@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import tmdbService from '../../services/tmdbService';
+import commentService from '../../services/commentService';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { ChatBubbleLeftIcon, HandThumbUpIcon } from '@heroicons/react/24/outline';
 
 const CommentSection = ({ mediaId, mediaType }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,126 +15,64 @@ const CommentSection = ({ mediaId, mediaType }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   
-  // Charger les commentaires
+  // Fonction pour charger les commentaires et leurs réponses
+  const loadComments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Récupérer les commentaires depuis l'API
+      const commentsData = await commentService.getMediaComments(mediaId, mediaType);
+      
+      console.log("Commentaires chargés:", commentsData);
+      
+      setComments(commentsData || []);
+      setTotalPages(Math.ceil((commentsData?.length || 0) / 10) || 1);
+    } catch (err) {
+      console.error('Erreur lors du chargement des commentaires:', err);
+      setError('Une erreur est survenue lors du chargement des commentaires.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Charger les commentaires lors du premier rendu et quand mediaId/mediaType change
   useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setLoading(true);
-        
-        // Récupérer les critiques de TMDb (en tant que commentaires)
-        const data = await tmdbService.getComments(mediaType, mediaId, page);
-        
-        // Pour le développement, ajouter des commentaires fictifs si aucun n'est disponible
-        let processedComments = data.results || [];
-        
-        if (processedComments.length === 0 && page === 1) {
-          processedComments = generateDummyComments();
-        }
-        
-        // Transformer les critiques en format de commentaires
-        const formattedComments = processedComments.map(review => ({
-          id: review.id,
-          author: review.author || 'Anonyme',
-          content: review.content,
-          date: review.created_at ? new Date(review.created_at).toLocaleDateString('fr-FR') : 'Date inconnue',
-          avatar: review.author_details?.avatar_path ? 
-            `https://image.tmdb.org/t/p/w45${review.author_details.avatar_path}` : null,
-          likes: Math.floor(Math.random() * 15), // Simuler des likes pour le développement
-          replies: generateDummyReplies(review.id) // Simuler des réponses pour le développement
-        }));
-        
-        setComments(formattedComments);
-        setTotalPages(data.total_pages || 1);
-        setLoading(false);
-      } catch (err) {
-        console.error('Erreur lors du chargement des commentaires:', err);
-        setError('Une erreur est survenue lors du chargement des commentaires.');
-        setLoading(false);
-      }
-    };
-    
-    fetchComments();
-  }, [mediaId, mediaType, page]);
-  
-  // Générer des commentaires fictifs pour le développement
-  const generateDummyComments = () => {
-    return [
-      {
-        id: 'dummy-1',
-        author: 'Cinéphile Passionné',
-        content: 'Ce film est absolument incroyable ! Les performances des acteurs sont exceptionnelles et la réalisation est à couper le souffle. Je recommande vivement !',
-        created_at: new Date().toISOString(),
-        author_details: { avatar_path: null }
-      },
-      {
-        id: 'dummy-2',
-        author: 'Critique Amateur',
-        content: 'J\'ai passé un bon moment, mais l\'histoire aurait pu être plus développée. Les effets spéciaux compensent le manque de profondeur des personnages secondaires.',
-        created_at: new Date(Date.now() - 86400000).toISOString(), // Hier
-        author_details: { avatar_path: null }
-      }
-    ];
-  };
-  
-  // Générer des réponses fictives pour le développement
-  const generateDummyReplies = (commentId) => {
-    if (Math.random() > 0.5) return []; // 50% de chance d'avoir des réponses
-    
-    return [
-      {
-        id: `reply-${commentId}-1`,
-        author: 'Fan Enthousiaste',
-        content: 'Je suis complètement d\'accord avec toi ! J\'ai adoré ce moment où...',
-        date: new Date(Date.now() - 43200000).toISOString(), // 12h avant
-        likes: Math.floor(Math.random() * 5)
-      }
-    ];
-  };
+    loadComments();
+  }, [mediaId, mediaType]);
   
   // Soumettre un nouveau commentaire
-  const handleSubmitComment = (e) => {
+  const handleSubmitComment = async (e) => {
     e.preventDefault();
     
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !isAuthenticated) return;
     
-    // Simuler l'ajout d'un commentaire
-    const newCommentObj = {
-      id: `comment-${Date.now()}`,
-      author: user?.username || 'Vous',
-      content: newComment,
-      date: new Date().toLocaleDateString('fr-FR'),
-      avatar: null,
-      likes: 0,
-      replies: []
-    };
-    
-    // Ajouter à la liste des commentaires
-    if (replyingTo) {
-      // Ajouter une réponse
-      setComments(prevComments => prevComments.map(comment => 
-        comment.id === replyingTo
-          ? {
-              ...comment,
-              replies: [...(comment.replies || []), {
-                id: `reply-${Date.now()}`,
-                author: user?.username || 'Vous',
-                content: newComment,
-                date: new Date().toLocaleDateString('fr-FR'),
-                likes: 0
-              }]
-            }
-          : comment
-      ));
+    try {
+      const commentData = {
+        media_id: parseInt(mediaId, 10),
+        media_type: mediaType,
+        content: newComment,
+        parent_id: replyingTo || null,
+        is_spoiler: false
+      };
       
-      // Réinitialiser
+      console.log("Envoi du commentaire:", commentData);
+      
+      // Envoyer le commentaire à l'API
+      const response = await commentService.createComment(commentData);
+      console.log("Réponse API:", response);
+      
+      // Recharger tous les commentaires pour s'assurer d'avoir les données à jour
+      await loadComments();
+      
+      // Réinitialiser le formulaire
+      setNewComment('');
       setReplyingTo(null);
-    } else {
-      // Ajouter un nouveau commentaire
-      setComments(prevComments => [newCommentObj, ...prevComments]);
+      
+    } catch (err) {
+      console.error('Erreur lors de l\'ajout du commentaire:', err);
+      setError('Une erreur est survenue lors de l\'ajout du commentaire.');
     }
-    
-    // Réinitialiser le formulaire
-    setNewComment('');
   };
   
   // Commencer à répondre à un commentaire
@@ -148,13 +86,14 @@ const CommentSection = ({ mediaId, mediaType }) => {
     document.getElementById('comment-form').scrollIntoView({ behavior: 'smooth' });
   };
   
-  // Simuler un "j'aime" sur un commentaire
+  // Gérer les "j'aime" sur un commentaire
   const handleLike = (commentId, isReply = false, parentId = null) => {
     if (!isAuthenticated) {
       alert('Vous devez être connecté pour aimer les commentaires');
       return;
     }
     
+    // Mettre à jour l'UI localement en attendant la mise en œuvre de l'API
     if (isReply && parentId) {
       // Like sur une réponse
       setComments(prevComments => prevComments.map(comment => 
@@ -177,6 +116,8 @@ const CommentSection = ({ mediaId, mediaType }) => {
           : comment
       ));
     }
+    
+    // TODO: Implémenter l'API pour les likes
   };
   
   // Changer de page
@@ -205,7 +146,7 @@ const CommentSection = ({ mediaId, mediaType }) => {
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Partagez votre avis..."
+              placeholder={replyingTo ? "Écrivez votre réponse..." : "Partagez votre avis..."}
               className="w-full p-3 bg-background border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary text-white"
               rows="4"
               required
@@ -283,8 +224,12 @@ const CommentSection = ({ mediaId, mediaType }) => {
                   
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
-                      <h4 className="text-white font-medium">{comment.author}</h4>
-                      <span className="text-gray-400 text-sm">{comment.date}</span>
+                      <h4 className="text-white font-medium">{comment.username || comment.author}</h4>
+                      <span className="text-gray-400 text-sm">
+                        {comment.created_at 
+                          ? new Date(comment.created_at).toLocaleDateString('fr-FR') 
+                          : comment.date}
+                      </span>
                     </div>
                     
                     <div className="mt-2 text-gray-300 whitespace-pre-line">
@@ -297,7 +242,7 @@ const CommentSection = ({ mediaId, mediaType }) => {
                         className="flex items-center text-gray-400 hover:text-primary text-sm"
                       >
                         <HandThumbUpIcon className="w-4 h-4 mr-1" />
-                        <span>{comment.likes}</span>
+                        <span>{comment.likes || 0}</span>
                       </button>
                       
                       <button 
@@ -322,8 +267,12 @@ const CommentSection = ({ mediaId, mediaType }) => {
                         
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
-                            <h5 className="text-white font-medium">{reply.author}</h5>
-                            <span className="text-gray-400 text-xs">{reply.date}</span>
+                            <h5 className="text-white font-medium">{reply.username || reply.author}</h5>
+                            <span className="text-gray-400 text-xs">
+                              {reply.created_at 
+                                ? new Date(reply.created_at).toLocaleDateString('fr-FR') 
+                                : reply.date}
+                            </span>
                           </div>
                           
                           <div className="mt-1 text-gray-300 text-sm">
@@ -335,7 +284,7 @@ const CommentSection = ({ mediaId, mediaType }) => {
                             className="mt-2 flex items-center text-gray-400 hover:text-primary text-xs"
                           >
                             <HandThumbUpIcon className="w-3 h-3 mr-1" />
-                            <span>{reply.likes}</span>
+                            <span>{reply.likes || 0}</span>
                           </button>
                         </div>
                       </div>

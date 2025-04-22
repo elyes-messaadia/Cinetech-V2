@@ -9,6 +9,9 @@ import DetailPage from './pages/DetailPage';
 import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import WatchlistPage from './pages/WatchlistPage';
+import HistoryPage from './pages/HistoryPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PrivateRoute from './components/auth/PrivateRoute';
 
@@ -40,6 +43,30 @@ function App() {
           element={
             <PrivateRoute>
               <ProfilePage />
+            </PrivateRoute>
+          }
+        />
+        <Route 
+          path="settings" 
+          element={
+            <PrivateRoute>
+              <SettingsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route 
+          path="watchlist" 
+          element={
+            <PrivateRoute>
+              <WatchlistPage />
+            </PrivateRoute>
+          }
+        />
+        <Route 
+          path="history" 
+          element={
+            <PrivateRoute>
+              <HistoryPage />
             </PrivateRoute>
           }
         />
