@@ -1,0 +1,27 @@
+cinetech/
+│
+├── client/                     # Front-end React
+│   ├── public/                # Fichiers statiques (favicon, index.html)
+│   └── src/
+│       ├── assets/            # Images, icônes
+│       ├── components/        # Composants réutilisables (Header, Card, etc.)
+│       ├── pages/             # Pages (Home, Films, Series, Detail, Login, etc.)
+│       ├── routes/            # React Router config
+│       ├── context/           # Contexte global (auth, favoris, etc.)
+│       ├── services/          # Appels à l’API TMDb + API back-end
+│       ├── App.jsx
+│       └── main.jsx
+│
+├── server/                    # Back-end Express
+│   ├── config/               # Connexion à MySQL (ex: db.js)
+│   ├── controllers/          # Logique métier (authController.js, userController.js, etc.)
+│   ├── middlewares/          # Auth, validation, etc.
+│   ├── models/               # Accès BDD (User.js, Favorite.js, Comment.js)
+│   ├── routes/               # Routes Express (auth.js, users.js, films.js, etc.)
+│   ├── utils/                # Fonctions réutilisables (hash, jwt, etc.)
+│   ├── .env                  # Variables d’environnement
+│   ├── server.js             # Point d’entrée Express
+│   └── package.json
+│
+├── README.md
+└── package.json              # (si monorepo ou avec workspaces, sinon un par dossier)
