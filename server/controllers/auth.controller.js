@@ -141,12 +141,31 @@ class AuthController {
         return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
       }
       
+      // Créer les données pour le payload JWT
+      const payload = {
+        id: user.id,
+        email: user.email,
+        username: user.username
+      };
+      
+      console.log("Génération du token avec payload:", payload);
+      console.log("JWT_SECRET:", process.env.JWT_SECRET ? "Secret défini (longueur: " + process.env.JWT_SECRET.length + ")" : "Secret non défini");
+      
       // Générer un token JWT
       const token = jwt.sign(
-        { id: user.id, email: user.email, username: user.username },
+        payload,
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
+      
+      // Vérifier que le token est bien formé
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Vérification immédiate du token réussie:", { id: decoded.id, email: decoded.email });
+      } catch (tokenError) {
+        console.error("ERREUR: Le token généré est invalide:", tokenError);
+        return res.status(500).json({ message: 'Erreur lors de la génération du token' });
+      }
       
       res.status(200).json({
         message: 'Connexion réussie',
