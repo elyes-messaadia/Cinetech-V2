@@ -82,7 +82,6 @@ const Header = () => {
               to="/"
               className={`flex items-center text-sm font-medium ${isActive('/') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
             >
-              <HomeIcon className="w-5 h-5 mr-1" />
               <span>Accueil</span>
             </Link>
             
@@ -90,7 +89,6 @@ const Header = () => {
               to="/movies"
               className={`flex items-center text-sm font-medium ${isActive('/movies') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
             >
-              <FilmIcon className="w-5 h-5 mr-1" />
               <span>Films</span>
             </Link>
             
@@ -98,7 +96,6 @@ const Header = () => {
               to="/series"
               className={`flex items-center text-sm font-medium ${isActive('/series') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
             >
-              <TvIcon className="w-5 h-5 mr-1" />
               <span>Séries</span>
             </Link>
             
@@ -106,7 +103,6 @@ const Header = () => {
               to="/search"
               className={`flex items-center text-sm font-medium ${isActive('/search') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
             >
-              <MagnifyingGlassIcon className="w-5 h-5 mr-1" />
               <span>Recherche</span>
             </Link>
           </nav>

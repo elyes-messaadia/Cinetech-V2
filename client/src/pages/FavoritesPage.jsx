@@ -111,25 +111,26 @@ const FavoritesPage = () => {
       
       // Trier
       const sortedFavorites = [...result];
+      let titleA, titleB, titleComparison, dateComparison, ratingComparison;
       
       switch (filters.sortBy) {
         case 'date':
           sortedFavorites.sort((a, b) => {
-            const dateComparison = new Date(b.addedAt) - new Date(a.addedAt);
+            dateComparison = new Date(b.addedAt) - new Date(a.addedAt);
             return sortOrder === 'asc' ? -dateComparison : dateComparison;
           });
           break;
         case 'title':
           sortedFavorites.sort((a, b) => {
-            const titleA = a.mediaType === 'movie' ? a.title : a.name;
-            const titleB = b.mediaType === 'movie' ? b.title : b.name;
-            const titleComparison = titleA.localeCompare(titleB);
+            titleA = a.mediaType === 'movie' ? a.title : a.name;
+            titleB = b.mediaType === 'movie' ? b.title : b.name;
+            titleComparison = titleA.localeCompare(titleB);
             return sortOrder === 'asc' ? titleComparison : -titleComparison;
           });
           break;
         case 'rating':
           sortedFavorites.sort((a, b) => {
-            const ratingComparison = b.vote_average - a.vote_average;
+            ratingComparison = b.vote_average - a.vote_average;
             return sortOrder === 'asc' ? -ratingComparison : ratingComparison;
           });
           break;

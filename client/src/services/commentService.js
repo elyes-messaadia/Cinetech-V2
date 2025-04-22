@@ -85,3 +85,32 @@ const commentService = {
 };
 
 export default commentService; 
+      }
+      throw error.response?.data || { message: 'Erreur lors de la création du commentaire' };
+    }
+  },
+  
+  // Mettre à jour un commentaire
+  updateComment: async (commentId, commentData) => {
+    try {
+      const response = await authAxios.put(`${API_URL}/comments/${commentId}`, commentData);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur updateComment:', error);
+      throw error.response?.data || { message: 'Erreur lors de la mise à jour du commentaire' };
+    }
+  },
+  
+  // Supprimer un commentaire
+  deleteComment: async (commentId) => {
+    try {
+      const response = await authAxios.delete(`${API_URL}/comments/${commentId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur deleteComment:', error);
+      throw error.response?.data || { message: 'Erreur lors de la suppression du commentaire' };
+    }
+  }
+};
+
+export default commentService; 

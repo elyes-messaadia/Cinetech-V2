@@ -43,7 +43,8 @@ const favoriteService = {
    * @param {string} mediaType - Type du média (movie ou tv)
    * @returns {Promise} - Résultat de l'API
    */
-  addFavorite: async (_mediaId, _mediaType) => {
+  // eslint-disable-next-line no-unused-vars
+  addFavorite: async (mediaId, mediaType) => {
     try {
       // Cette fonction appelle l'API, mais pour le moment elle renvoie une promesse résolue
       return new Promise((resolve) => {
@@ -56,8 +57,8 @@ const favoriteService = {
       /*
       const token = getToken();
       const response = await axios.post(`${API_URL}/favorites`, {
-        mediaId: _mediaId,
-        mediaType: _mediaType
+        mediaId: mediaId,
+        mediaType: mediaType
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -77,7 +78,8 @@ const favoriteService = {
    * @param {string} mediaType - Type du média (movie ou tv)
    * @returns {Promise} - Résultat de l'API
    */
-  removeFavorite: async (_mediaId, _mediaType) => {
+  // eslint-disable-next-line no-unused-vars
+  removeFavorite: async (mediaId, mediaType) => {
     try {
       // Cette fonction appelle l'API, mais pour le moment elle renvoie une promesse résolue
       return new Promise((resolve) => {
@@ -89,7 +91,7 @@ const favoriteService = {
       // Quand l'API sera prête, le code ci-dessous devra être utilisé
       /*
       const token = getToken();
-      const response = await axios.delete(`${API_URL}/favorites/${_mediaType}/${_mediaId}`, {
+      const response = await axios.delete(`${API_URL}/favorites/${mediaType}/${mediaId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -108,7 +110,8 @@ const favoriteService = {
    * @param {string} mediaType - Type du média (movie ou tv)
    * @returns {Promise<boolean>} - true si le média est dans les favoris, false sinon
    */
-  isFavorite: async (_mediaId, _mediaType) => {
+  // eslint-disable-next-line no-unused-vars
+  isFavorite: async (mediaId, mediaType) => {
     try {
       // Cette fonction appelle l'API, mais pour le moment elle renvoie une valeur aléatoire
       return new Promise((resolve) => {
@@ -120,7 +123,7 @@ const favoriteService = {
       // Quand l'API sera prête, le code ci-dessous devra être utilisé
       /*
       const token = getToken();
-      const response = await axios.get(`${API_URL}/favorites/check/${_mediaType}/${_mediaId}`, {
+      const response = await axios.get(`${API_URL}/favorites/check/${mediaType}/${mediaId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
