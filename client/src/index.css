@@ -55,3 +55,13 @@ body {
     @apply bg-background-light rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105;
   }
 }
+
+/* Masquer les barres de défilement pour les conteneurs avec la classe hide-scrollbar */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
