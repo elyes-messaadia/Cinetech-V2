@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import favoriteService from '../services/favoriteService';
 import tmdbService from '../services/tmdbService';
 import MediaCard from '../components/ui/MediaCard';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 
 const FavoritesPage = () => {
@@ -13,127 +13,124 @@ const FavoritesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  
-  // Filtres et tri
+  const [filteredFavorites, setFilteredFavorites] = useState([]);
   const [filters, setFilters] = useState({
-    type: 'all', // all, movie, tv
-    genre: '',
-    sortBy: 'added_date_desc' // added_date_desc, title_asc, vote_average_desc
+    type: 'all',
+    genre: 'all',
+    sortBy: 'date'
   });
+  const [genres, setGenres] = useState([]);
   
   // Récupérer les genres
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        await Promise.all([
-          tmdbService.getMovieGenres(),
-          tmdbService.getTvGenres()
-        ]);
-      } catch (err) {
-        console.error('Erreur lors du chargement des genres:', err);
+        const movieGenres = await tmdbService.getMovieGenres();
+        const tvGenres = await tmdbService.getTvGenres();
+        
+        // Fusionner les genres en enlevant les doublons
+        const allGenres = [...movieGenres, ...tvGenres];
+        const uniqueGenres = allGenres.filter((genre, index, self) =>
+          index === self.findIndex((g) => g.id === genre.id)
+        );
+        
+        setGenres(uniqueGenres);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des genres', error);
+        setError('Erreur lors du chargement des genres. Certains filtres peuvent ne pas être disponibles.');
       }
     };
-    
-    fetchGenres();
-  }, []);
-  
-  // Charger les favoris
-  useEffect(() => {
+
     const fetchFavorites = async () => {
-      if (!isAuthenticated) return;
-      
       try {
         setLoading(true);
-        const favoritesList = await favoriteService.getFavorites();
+        setError(null);
         
-        // Récupérer les détails de chaque élément favori
-        const detailedFavorites = await Promise.all(
-          favoritesList.map(async favorite => {
+        const userFavorites = await favoriteService.getUserFavorites();
+        
+        // Récupérer les détails pour chaque favori depuis TMDB
+        const favoriteDetails = await Promise.all(
+          userFavorites.map(async (favorite) => {
             try {
               const details = favorite.mediaType === 'movie'
                 ? await tmdbService.getMovieDetails(favorite.mediaId)
-                : await tmdbService.getSeriesDetails(favorite.mediaId);
+                : await tmdbService.getTvDetails(favorite.mediaId);
               
               return {
                 ...details,
-                media_type: favorite.mediaType,
-                added_date: favorite.createdAt
+                mediaType: favorite.mediaType,
+                addedAt: favorite.createdAt
               };
-            } catch (err) {
-              console.error(`Erreur lors de la récupération des détails pour ${favorite.mediaId}:`, err);
-              return null;
+            } catch (error) {
+              console.error(`Erreur lors de la récupération des détails pour ${favorite.mediaId}`, error);
+              return null; // Ignorer les favoris avec des erreurs
             }
           })
         );
         
-        // Filtrer les éléments nuls (erreurs)
-        const validFavorites = detailedFavorites.filter(item => item !== null);
+        // Filtrer les favoris null (qui ont échoué)
+        const validFavorites = favoriteDetails.filter(f => f !== null);
         setFavorites(validFavorites);
+        setFilteredFavorites(validFavorites);
         setLoading(false);
-      } catch (err) {
-        console.error('Erreur lors du chargement des favoris:', err);
-        setError('Une erreur est survenue lors du chargement de vos favoris.');
+      } catch (error) {
+        console.error('Erreur lors de la récupération des favoris', error);
+        setError('Impossible de récupérer vos favoris. Veuillez réessayer plus tard.');
         setLoading(false);
       }
     };
-    
-    fetchFavorites();
+
+    if (isAuthenticated) {
+      fetchGenres();
+      fetchFavorites();
+    } else {
+      setLoading(false);
+    }
   }, [isAuthenticated]);
   
-  // Filtrer et trier les favoris
-  const getFilteredFavorites = () => {
-    if (!favorites.length) return [];
-    
-    // 1. Filtrer par type
-    let filtered = favorites;
-    if (filters.type !== 'all') {
-      filtered = filtered.filter(item => item.media_type === filters.type);
-    }
-    
-    // 2. Filtrer par genre
-    if (filters.genre) {
-      const genreId = parseInt(filters.genre);
-      filtered = filtered.filter(item => {
-        if (!item.genres) return false;
-        return item.genres.some(genre => genre.id === genreId);
-      });
-    }
-    
-    // 3. Trier
-    return filtered.sort((a, b) => {
-      let titleA, titleB;
+  useEffect(() => {
+    const applyFilters = () => {
+      let result = [...favorites];
+      
+      // Filtrer par type
+      if (filters.type !== 'all') {
+        result = result.filter(item => item.mediaType === filters.type);
+      }
+      
+      // Filtrer par genre
+      if (filters.genre !== 'all') {
+        const genreId = parseInt(filters.genre);
+        result = result.filter(item => 
+          item.genres && item.genres.some(genre => genre.id === genreId)
+        );
+      }
+      
+      // Trier
+      const sortedFavorites = [...result];
       
       switch (filters.sortBy) {
-        case 'title_asc':
-          titleA = a.media_type === 'movie' ? a.title : a.name;
-          titleB = b.media_type === 'movie' ? b.title : b.name;
-          return titleA.localeCompare(titleB);
-        
-        case 'vote_average_desc':
-          return b.vote_average - a.vote_average;
-        
-        case 'added_date_desc':
+        case 'date':
+          sortedFavorites.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+          break;
+        case 'title':
+          sortedFavorites.sort((a, b) => {
+            const titleA = a.mediaType === 'movie' ? a.title : a.name;
+            const titleB = b.mediaType === 'movie' ? b.title : b.name;
+            return titleA.localeCompare(titleB);
+          });
+          break;
+        case 'rating':
+          sortedFavorites.sort((a, b) => b.vote_average - a.vote_average);
+          break;
         default:
-          // Tri par date d'ajout (plus récent d'abord)
-          return new Date(b.added_date) - new Date(a.added_date);
+          break;
       }
-    });
-  };
-  
-  // Obtenir tous les genres utilisés dans les favoris
-  const getUsedGenres = () => {
-    const genreSet = new Set();
-    
-    favorites.forEach(item => {
-      if (!item.genres) return;
       
-      item.genres.forEach(genre => {
-        genreSet.add(JSON.stringify(genre));
-      });
-    });
+      setFilteredFavorites(sortedFavorites);
+    };
     
-    return Array.from(genreSet).map(genreString => JSON.parse(genreString));
-  };
+    applyFilters();
+  }, [favorites, filters]);
   
   // Gestion du changement de filtre
   const handleFilterChange = (field, value) => {
@@ -152,8 +149,6 @@ const FavoritesPage = () => {
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
-  
-  const filteredFavorites = getFilteredFavorites();
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -203,8 +198,8 @@ const FavoritesPage = () => {
                 onChange={(e) => handleFilterChange('genre', e.target.value)}
                 className="w-full bg-background border border-gray-600 rounded p-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="">Tous les genres</option>
-                {getUsedGenres().map(genre => (
+                <option value="all">Tous les genres</option>
+                {genres.map(genre => (
                   <option key={genre.id} value={genre.id}>
                     {genre.name}
                   </option>
@@ -223,9 +218,9 @@ const FavoritesPage = () => {
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
                 className="w-full bg-background border border-gray-600 rounded p-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="added_date_desc">Date d'ajout</option>
-                <option value="title_asc">Titre (A-Z)</option>
-                <option value="vote_average_desc">Note</option>
+                <option value="date">Date d'ajout</option>
+                <option value="title">Titre</option>
+                <option value="rating">Note</option>
               </select>
             </div>
           </div>
@@ -255,9 +250,9 @@ const FavoritesPage = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
           {filteredFavorites.map((item) => (
             <MediaCard 
-              key={`${item.media_type}-${item.id}`} 
+              key={`${item.mediaType}-${item.id}`} 
               item={item} 
-              type={item.media_type} 
+              type={item.mediaType} 
             />
           ))}
         </div>
