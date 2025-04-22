@@ -25,8 +25,8 @@ class AuthController {
         });
       }
       
+      // Vérifier si l'email existe déjà
       try {
-        // Vérifier si l'email existe déjà
         console.log("Vérification de l'email existant...");
         const existingUser = await UserModel.findByEmail(email);
         console.log("Résultat de la vérification:", existingUser ? "Email déjà utilisé" : "Email disponible");
@@ -36,51 +36,80 @@ class AuthController {
         }
       } catch (emailCheckError) {
         console.error("Erreur lors de la vérification de l'email:", emailCheckError);
-        throw emailCheckError;
+        return res.status(500).json({ 
+          message: 'Erreur lors de la vérification de l\'email',
+          details: emailCheckError.message
+        });
       }
       
+      // Hasher le mot de passe
+      let hashedPassword;
       try {
-        // Hasher le mot de passe
         console.log("Hashage du mot de passe...");
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        hashedPassword = await bcrypt.hash(password, salt);
         console.log("Mot de passe hashé avec succès");
-        
-        // Créer l'utilisateur avec le mot de passe hashé
+      } catch (hashError) {
+        console.error("Erreur lors du hashage du mot de passe:", hashError);
+        return res.status(500).json({ 
+          message: 'Erreur lors du hashage du mot de passe',
+          details: hashError.message
+        });
+      }
+      
+      // Créer l'utilisateur
+      let user;
+      try {
         console.log("Création de l'utilisateur dans la base de données...");
-        const user = await UserModel.create({
+        user = await UserModel.create({
           username,
           email,
           password: hashedPassword
         });
         console.log("Utilisateur créé avec succès:", { id: user.id, username: user.username });
-        
-        // Générer un token JWT
+      } catch (dbError) {
+        console.error("Erreur lors de la création de l'utilisateur:", dbError);
+        return res.status(500).json({ 
+          message: 'Erreur lors de la création de l\'utilisateur',
+          details: dbError.message
+        });
+      }
+      
+      // Générer un token JWT
+      let token;
+      try {
         console.log("Génération du token JWT...");
-        const token = jwt.sign(
+        token = jwt.sign(
           { id: user.id, email: user.email, username: user.username },
           process.env.JWT_SECRET,
           { expiresIn: '24h' }
         );
         console.log("Token généré avec succès");
-        
-        res.status(201).json({
-          message: 'Utilisateur créé avec succès',
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email
-          },
-          token
+      } catch (tokenError) {
+        console.error("Erreur lors de la génération du token:", tokenError);
+        return res.status(500).json({ 
+          message: 'Erreur lors de la génération du token',
+          details: tokenError.message
         });
-      } catch (processingError) {
-        console.error("Erreur lors du traitement de l'inscription:", processingError);
-        throw processingError;
       }
+      
+      // Réponse finale
+      res.status(201).json({
+        message: 'Utilisateur créé avec succès',
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email
+        },
+        token
+      });
     } catch (error) {
       console.error('Erreur complète lors de l\'inscription:', error);
       console.error('Stack d\'erreur:', error.stack);
-      res.status(500).json({ message: 'Erreur lors de l\'inscription', details: error.message });
+      res.status(500).json({ 
+        message: 'Erreur lors de l\'inscription', 
+        details: error.message 
+      });
     }
   }
   

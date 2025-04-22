@@ -12,18 +12,53 @@ class UserModel {
     try {
       console.log("UserModel.create - Tentative d'insertion d'un utilisateur:", { username, email });
       
-      const [result] = await connection.query(
-        'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-        [username, email, password]
-      );
+      // Vérifier l'état de la connexion
+      try {
+        const [pingResult] = await connection.query('SELECT 1 as ping');
+        console.log("UserModel.create - Test de connexion:", pingResult);
+      } catch (pingError) {
+        console.error("UserModel.create - ERREUR: La connexion à la base de données a échoué:", pingError);
+        throw new Error("Impossible de se connecter à la base de données: " + pingError.message);
+      }
       
-      console.log("UserModel.create - Utilisateur inséré avec succès. ID:", result.insertId);
-      return { id: result.insertId, username, email };
+      // Vérifier si la table existe
+      try {
+        const [tableResult] = await connection.query("SHOW TABLES LIKE 'users'");
+        console.log("UserModel.create - Vérification de la table users:", tableResult.length ? "Existe" : "N'existe pas");
+        
+        if (tableResult.length === 0) {
+          console.error("UserModel.create - ERREUR: La table 'users' n'existe pas");
+          throw new Error("La table 'users' n'existe pas dans la base de données");
+        }
+      } catch (tableError) {
+        console.error("UserModel.create - ERREUR lors de la vérification de la table:", tableError);
+        throw tableError;
+      }
+      
+      // Insérer l'utilisateur
+      try {
+        const [result] = await connection.query(
+          'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+          [username, email, password]
+        );
+        
+        console.log("UserModel.create - Utilisateur inséré avec succès. ID:", result.insertId);
+        return { id: result.insertId, username, email };
+      } catch (insertError) {
+        console.error("UserModel.create - ERREUR détaillée lors de l'insertion:", insertError);
+        if (insertError.code === 'ER_DUP_ENTRY') {
+          console.error("UserModel.create - Erreur de doublon (email déjà utilisé)");
+          throw new Error("Cet email est déjà utilisé");
+        }
+        if (insertError.code === 'ER_NO_SUCH_TABLE') {
+          console.error("UserModel.create - La table n'existe pas");
+          throw new Error("La table 'users' n'existe pas dans la base de données");
+        }
+        throw new Error("Erreur lors de l'insertion: " + insertError.message);
+      }
     } catch (error) {
       console.error("UserModel.create - Erreur lors de la création de l'utilisateur:", error);
-      if (error.code === 'ER_DUP_ENTRY') {
-        console.error("UserModel.create - Erreur de doublon (email déjà utilisé)");
-      }
+      console.error("UserModel.create - Stack d'erreur:", error.stack);
       throw error;
     }
   }
