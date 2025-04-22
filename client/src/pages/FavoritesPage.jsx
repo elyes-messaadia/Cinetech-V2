@@ -4,8 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import favoriteService from '../services/favoriteService';
 import tmdbService from '../services/tmdbService';
 import MediaCard from '../components/ui/MediaCard';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import FilterTypePanel from '../components/ui/FilterTypePanel';
+import FilterGenrePanel from '../components/ui/FilterGenrePanel';
+import SortPanel from '../components/ui/SortPanel';
 
 const FavoritesPage = () => {
   const { isAuthenticated } = useAuth();
@@ -20,6 +23,7 @@ const FavoritesPage = () => {
     sortBy: 'date'
   });
   const [genres, setGenres] = useState([]);
+  const [sortOrder, setSortOrder] = useState('desc');
   
   // Récupérer les genres
   useEffect(() => {
@@ -110,17 +114,24 @@ const FavoritesPage = () => {
       
       switch (filters.sortBy) {
         case 'date':
-          sortedFavorites.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+          sortedFavorites.sort((a, b) => {
+            const dateComparison = new Date(b.addedAt) - new Date(a.addedAt);
+            return sortOrder === 'asc' ? -dateComparison : dateComparison;
+          });
           break;
         case 'title':
           sortedFavorites.sort((a, b) => {
             const titleA = a.mediaType === 'movie' ? a.title : a.name;
             const titleB = b.mediaType === 'movie' ? b.title : b.name;
-            return titleA.localeCompare(titleB);
+            const titleComparison = titleA.localeCompare(titleB);
+            return sortOrder === 'asc' ? titleComparison : -titleComparison;
           });
           break;
         case 'rating':
-          sortedFavorites.sort((a, b) => b.vote_average - a.vote_average);
+          sortedFavorites.sort((a, b) => {
+            const ratingComparison = b.vote_average - a.vote_average;
+            return sortOrder === 'asc' ? -ratingComparison : ratingComparison;
+          });
           break;
         default:
           break;
@@ -130,7 +141,7 @@ const FavoritesPage = () => {
     };
     
     applyFilters();
-  }, [favorites, filters]);
+  }, [favorites, filters, sortOrder]);
   
   // Gestion du changement de filtre
   const handleFilterChange = (field, value) => {
@@ -139,6 +150,13 @@ const FavoritesPage = () => {
       [field]: value
     }));
   };
+  
+  // Options de tri
+  const sortOptions = [
+    { value: 'date', label: 'Date d\'ajout' },
+    { value: 'title', label: 'Titre' },
+    { value: 'rating', label: 'Note' }
+  ];
   
   // Basculer l'affichage des filtres
   const toggleFilters = () => {
@@ -169,60 +187,25 @@ const FavoritesPage = () => {
         <div className="bg-background-light rounded-lg p-4 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">Filtrer et trier</h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Type de média */}
-            <div className="space-y-2">
-              <label htmlFor="type" className="block text-gray-300 font-medium">
-                Type
-              </label>
-              <select
-                id="type"
-                value={filters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                className="w-full bg-background border border-gray-600 rounded p-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="all">Tous</option>
-                <option value="movie">Films uniquement</option>
-                <option value="tv">Séries uniquement</option>
-              </select>
-            </div>
+          <div className="space-y-4">
+            <FilterTypePanel 
+              mediaType={filters.type} 
+              onTypeChange={(value) => handleFilterChange('type', value)} 
+            />
             
-            {/* Genre */}
-            <div className="space-y-2">
-              <label htmlFor="genre" className="block text-gray-300 font-medium">
-                Genre
-              </label>
-              <select
-                id="genre"
-                value={filters.genre}
-                onChange={(e) => handleFilterChange('genre', e.target.value)}
-                className="w-full bg-background border border-gray-600 rounded p-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="all">Tous les genres</option>
-                {genres.map(genre => (
-                  <option key={genre.id} value={genre.id}>
-                    {genre.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <FilterGenrePanel 
+              genres={genres} 
+              selectedGenreId={filters.genre} 
+              onGenreChange={(value) => handleFilterChange('genre', value)} 
+            />
             
-            {/* Tri */}
-            <div className="space-y-2">
-              <label htmlFor="sortBy" className="block text-gray-300 font-medium">
-                Trier par
-              </label>
-              <select
-                id="sortBy"
-                value={filters.sortBy}
-                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                className="w-full bg-background border border-gray-600 rounded p-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="date">Date d'ajout</option>
-                <option value="title">Titre</option>
-                <option value="rating">Note</option>
-              </select>
-            </div>
+            <SortPanel 
+              sortOptions={sortOptions} 
+              sortBy={filters.sortBy} 
+              sortOrder={sortOrder} 
+              onSortChange={(value) => handleFilterChange('sortBy', value)} 
+              onOrderChange={setSortOrder} 
+            />
           </div>
         </div>
       )}
