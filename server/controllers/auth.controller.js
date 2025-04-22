@@ -40,15 +40,18 @@ class AuthController {
       }
       
       try {
-        // TEST: Utiliser le mot de passe en clair temporairement pour tester
-        console.log("ATTENTION: Contournement du hashage - utilisation du mot de passe en clair pour le test");
+        // Hasher le mot de passe
+        console.log("Hashage du mot de passe...");
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        console.log("Mot de passe hashé avec succès");
         
-        // Créer l'utilisateur sans hasher le mot de passe
+        // Créer l'utilisateur avec le mot de passe hashé
         console.log("Création de l'utilisateur dans la base de données...");
         const user = await UserModel.create({
           username,
           email,
-          password // Mot de passe non hashé
+          password: hashedPassword
         });
         console.log("Utilisateur créé avec succès:", { id: user.id, username: user.username });
         
