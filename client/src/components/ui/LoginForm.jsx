@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../../context/AuthContext';
 
 const LoginForm = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -56,19 +59,12 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      // Ici, vous ajouterez la logique d'authentification avec votre API
-      // Exemple: 
-      // const response = await authService.login(formData);
-      // Si succès, rediriger ou mettre à jour l'état global
-      
-      // Simulation d'un délai d'API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Connexion réussie', formData);
+      await login(formData);
+      navigate('/');
     } catch (error) {
       console.error('Erreur de connexion', error);
       setErrors({
-        form: "Échec de la connexion. Veuillez vérifier vos identifiants."
+        form: error.message || "Échec de la connexion. Veuillez vérifier vos identifiants."
       });
     } finally {
       setIsLoading(false);
