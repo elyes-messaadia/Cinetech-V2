@@ -5,7 +5,7 @@ import HomePage from './pages/HomePage';
 import MoviesPage from './pages/MoviesPage';
 import SeriesPage from './pages/SeriesPage';
 import MovieDetailPage from './pages/MovieDetailPage';
-import SeriesDetailPage from './pages/SeriesDetailPage';
+import DetailPage from './pages/DetailPage';
 import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -32,7 +32,7 @@ function App() {
               <Route path="movies" element={<MoviesPage />} />
               <Route path="series" element={<SeriesPage />} />
               <Route path="movie/:id" element={<MovieDetailPage />} />
-              <Route path="tv/:id" element={<SeriesDetailPage />} />
+              <Route path="tv/:id" element={<DetailPage />} />
               <Route path="search" element={<SearchPage />} />
               <Route path="discover" element={<DiscoverPage />} />
               <Route path="login" element={<LoginPage />} />
