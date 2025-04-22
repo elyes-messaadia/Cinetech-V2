@@ -1,188 +1,162 @@
 import axios from 'axios';
 
-// Configuration de base pour axios
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY || 'votre_cle_api_tmdb';
-const BASE_URL = 'https://api.themoviedb.org/3';
-
-// Instance axios avec configuration par défaut
-const api = axios.create({
-  baseURL: BASE_URL,
+// Créer une instance axios pour l'API TMDb
+const tmdbApi = axios.create({
+  baseURL: 'https://api.themoviedb.org/3',
   params: {
-    api_key: API_KEY,
+    api_key: import.meta.env.VITE_TMDB_API_KEY,
     language: 'fr-FR'
   }
 });
 
-// Services pour l'API TMDb
+// Service pour les appels à l'API TMDb
 const tmdbService = {
-  // Films
-  fetchTrendingMovies: async (timeWindow = 'week') => {
+  /**
+   * Récupérer les médias tendances (films et séries)
+   * @param {string} timeWindow - 'day' ou 'week'
+   * @returns {Promise} - Résultat de l'API
+   */
+  getTrending: async (timeWindow = 'week') => {
     try {
-      const response = await api.get(`/trending/movie/${timeWindow}`);
-      return response.data.results;
+      const response = await tmdbApi.get(`/trending/all/${timeWindow}`);
+      return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des films tendances', error);
+      console.error('Erreur lors de la récupération des tendances:', error);
       throw error;
     }
   },
-  
-  fetchPopularMovies: async () => {
+
+  /**
+   * Récupérer les films populaires
+   * @param {number} page - Numéro de page
+   * @returns {Promise} - Résultat de l'API
+   */
+  getPopularMovies: async (page = 1) => {
     try {
-      const response = await api.get('/movie/popular');
-      return response.data.results;
+      const response = await tmdbApi.get('/movie/popular', {
+        params: { page }
+      });
+      return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des films populaires', error);
+      console.error('Erreur lors de la récupération des films populaires:', error);
       throw error;
     }
   },
-  
-  fetchMovieDetails: async (movieId) => {
+
+  /**
+   * Récupérer les séries populaires
+   * @param {number} page - Numéro de page
+   * @returns {Promise} - Résultat de l'API
+   */
+  getPopularSeries: async (page = 1) => {
     try {
-      const response = await api.get(`/movie/${movieId}`, {
+      const response = await tmdbApi.get('/tv/popular', {
+        params: { page }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des séries populaires:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupérer les films à venir
+   * @param {number} page - Numéro de page
+   * @returns {Promise} - Résultat de l'API
+   */
+  getUpcomingMovies: async (page = 1) => {
+    try {
+      const response = await tmdbApi.get('/movie/upcoming', {
+        params: { page }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des films à venir:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Récupérer les détails d'un film
+   * @param {number} id - ID du film
+   * @returns {Promise} - Résultat de l'API
+   */
+  getMovieDetails: async (id) => {
+    try {
+      const response = await tmdbApi.get(`/movie/${id}`, {
         params: {
-          append_to_response: 'videos,images'
+          append_to_response: 'videos,credits,similar,recommendations'
         }
       });
       return response.data;
     } catch (error) {
-      console.error(`Erreur lors de la récupération des détails du film ${movieId}`, error);
+      console.error(`Erreur lors de la récupération des détails du film ${id}:`, error);
       throw error;
     }
   },
-  
-  fetchMovieCredits: async (movieId) => {
+
+  /**
+   * Récupérer les détails d'une série
+   * @param {number} id - ID de la série
+   * @returns {Promise} - Résultat de l'API
+   */
+  getSeriesDetails: async (id) => {
     try {
-      const response = await api.get(`/movie/${movieId}/credits`);
-      return response.data;
-    } catch (error) {
-      console.error(`Erreur lors de la récupération des crédits du film ${movieId}`, error);
-      throw error;
-    }
-  },
-  
-  fetchSimilarMovies: async (movieId) => {
-    try {
-      const response = await api.get(`/movie/${movieId}/similar`);
-      return response.data.results;
-    } catch (error) {
-      console.error(`Erreur lors de la récupération des films similaires à ${movieId}`, error);
-      throw error;
-    }
-  },
-  
-  // Séries TV
-  fetchTrendingTvShows: async (timeWindow = 'week') => {
-    try {
-      const response = await api.get(`/trending/tv/${timeWindow}`);
-      return response.data.results;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des séries tendances', error);
-      throw error;
-    }
-  },
-  
-  fetchPopularTvShows: async () => {
-    try {
-      const response = await api.get('/tv/popular');
-      return response.data.results;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des séries populaires', error);
-      throw error;
-    }
-  },
-  
-  fetchTvShowDetails: async (tvId) => {
-    try {
-      const response = await api.get(`/tv/${tvId}`, {
+      const response = await tmdbApi.get(`/tv/${id}`, {
         params: {
-          append_to_response: 'videos,images'
+          append_to_response: 'videos,credits,similar,recommendations'
         }
       });
       return response.data;
     } catch (error) {
-      console.error(`Erreur lors de la récupération des détails de la série ${tvId}`, error);
+      console.error(`Erreur lors de la récupération des détails de la série ${id}:`, error);
       throw error;
     }
   },
-  
-  fetchTvShowCredits: async (tvId) => {
-    try {
-      const response = await api.get(`/tv/${tvId}/credits`);
-      return response.data;
-    } catch (error) {
-      console.error(`Erreur lors de la récupération des crédits de la série ${tvId}`, error);
-      throw error;
-    }
-  },
-  
-  fetchSimilarTvShows: async (tvId) => {
-    try {
-      const response = await api.get(`/tv/${tvId}/similar`);
-      return response.data.results;
-    } catch (error) {
-      console.error(`Erreur lors de la récupération des séries similaires à ${tvId}`, error);
-      throw error;
-    }
-  },
-  
-  // Recherche
+
+  /**
+   * Rechercher des films et séries
+   * @param {string} query - Terme de recherche
+   * @param {number} page - Numéro de page
+   * @returns {Promise} - Résultat de l'API
+   */
   searchMulti: async (query, page = 1) => {
     try {
-      const response = await api.get('/search/multi', {
-        params: {
-          query,
-          page
-        }
+      const response = await tmdbApi.get('/search/multi', {
+        params: { query, page }
       });
       return response.data;
     } catch (error) {
-      console.error(`Erreur lors de la recherche de "${query}"`, error);
+      console.error('Erreur lors de la recherche:', error);
       throw error;
     }
   },
-  
-  // Découverte
-  discoverMovies: async (params = {}) => {
+
+  /**
+   * Récupérer les genres de films
+   * @returns {Promise} - Résultat de l'API
+   */
+  getMovieGenres: async () => {
     try {
-      const response = await api.get('/discover/movie', {
-        params: { ...params }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la découverte de films', error);
-      throw error;
-    }
-  },
-  
-  discoverTvShows: async (params = {}) => {
-    try {
-      const response = await api.get('/discover/tv', {
-        params: { ...params }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la découverte de séries', error);
-      throw error;
-    }
-  },
-  
-  // Genres
-  fetchMovieGenres: async () => {
-    try {
-      const response = await api.get('/genre/movie/list');
+      const response = await tmdbApi.get('/genre/movie/list');
       return response.data.genres;
     } catch (error) {
-      console.error('Erreur lors de la récupération des genres de films', error);
+      console.error('Erreur lors de la récupération des genres de films:', error);
       throw error;
     }
   },
-  
-  fetchTvGenres: async () => {
+
+  /**
+   * Récupérer les genres de séries
+   * @returns {Promise} - Résultat de l'API
+   */
+  getTvGenres: async () => {
     try {
-      const response = await api.get('/genre/tv/list');
+      const response = await tmdbApi.get('/genre/tv/list');
       return response.data.genres;
     } catch (error) {
-      console.error('Erreur lors de la récupération des genres de séries', error);
+      console.error('Erreur lors de la récupération des genres de séries:', error);
       throw error;
     }
   }
