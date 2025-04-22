@@ -13,51 +13,74 @@ class AuthController {
    */
   static async register(req, res) {
     try {
+      console.log("Début du processus d'inscription");
       const { username, email, password } = req.body;
+      console.log("Données reçues:", { username, email, password: "***" });
       
       // Validation des données
       if (!username || !email || !password) {
+        console.log("Validation échouée: champs manquants");
         return res.status(400).json({ 
           message: 'Tous les champs sont requis (username, email, password)' 
         });
       }
       
-      // Vérifier si l'email existe déjà
-      const existingUser = await UserModel.findByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({ message: 'Cet email est déjà utilisé' });
+      try {
+        // Vérifier si l'email existe déjà
+        console.log("Vérification de l'email existant...");
+        const existingUser = await UserModel.findByEmail(email);
+        console.log("Résultat de la vérification:", existingUser ? "Email déjà utilisé" : "Email disponible");
+        
+        if (existingUser) {
+          return res.status(409).json({ message: 'Cet email est déjà utilisé' });
+        }
+      } catch (emailCheckError) {
+        console.error("Erreur lors de la vérification de l'email:", emailCheckError);
+        throw emailCheckError;
       }
       
-      // Hasher le mot de passe
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      
-      // Créer l'utilisateur
-      const user = await UserModel.create({
-        username,
-        email,
-        password: hashedPassword
-      });
-      
-      // Générer un token JWT
-      const token = jwt.sign(
-        { id: user.id, email: user.email, username: user.username },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      
-      res.status(201).json({
-        message: 'Utilisateur créé avec succès',
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email
-        },
-        token
-      });
+      try {
+        // Hasher le mot de passe
+        console.log("Hashage du mot de passe...");
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        console.log("Mot de passe hashé avec succès");
+        
+        // Créer l'utilisateur
+        console.log("Création de l'utilisateur dans la base de données...");
+        const user = await UserModel.create({
+          username,
+          email,
+          password: hashedPassword
+        });
+        console.log("Utilisateur créé avec succès:", { id: user.id, username: user.username });
+        
+        // Générer un token JWT
+        console.log("Génération du token JWT...");
+        const token = jwt.sign(
+          { id: user.id, email: user.email, username: user.username },
+          process.env.JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+        console.log("Token généré avec succès");
+        
+        res.status(201).json({
+          message: 'Utilisateur créé avec succès',
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email
+          },
+          token
+        });
+      } catch (processingError) {
+        console.error("Erreur lors du traitement de l'inscription:", processingError);
+        throw processingError;
+      }
     } catch (error) {
-      console.error('Erreur lors de l\'inscription:', error);
-      res.status(500).json({ message: 'Erreur lors de l\'inscription' });
+      console.error('Erreur complète lors de l\'inscription:', error);
+      console.error('Stack d\'erreur:', error.stack);
+      res.status(500).json({ message: 'Erreur lors de l\'inscription', details: error.message });
     }
   }
   
