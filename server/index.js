@@ -44,15 +44,22 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     // Initialiser la base de données
+    console.log("Tentative d'initialisation de la base de données...");
     await initDb();
+    console.log("Base de données initialisée avec succès !");
     
     // Démarrer le serveur
     app.listen(PORT, () => {
       console.log(`Serveur en cours d'exécution sur le port ${PORT}`);
     });
   } catch (error) {
-    console.error('Erreur lors du démarrage du serveur:', error);
-    process.exit(1);
+    console.error('Erreur détaillée lors de l\'initialisation de la base de données:');
+    console.error(error);
+    
+    // Démarrer quand même le serveur en cas d'erreur
+    app.listen(PORT, () => {
+      console.log(`Serveur en cours d'exécution sur le port ${PORT} (sans initialisation de la base de données)`);
+    });
   }
 };
 

@@ -59,7 +59,7 @@ npm install
    - Modifier les variables selon votre configuration (clé API TMDb, configuration de la base de données, etc.)
 
 5. Créer la base de données MySQL :
-   - Créer une base de données nommée `cinetech`
+   - Créer une base de données nommée `cinetech_db`
    - Le schéma de la base de données sera créé automatiquement au démarrage du serveur
 
 ### Démarrage
