@@ -4,7 +4,7 @@ import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import tmdbService from '../../services/tmdbService';
 import { debounce } from '../../utils/helpers';
 
-const SearchBar = () => {
+const SearchBar = ({ onClose }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState({ movies: [], tvShows: [] });
@@ -82,6 +82,7 @@ const SearchBar = () => {
     if (query.trim()) {
       navigate(`/search?q=${encodeURIComponent(query.trim())}`);
       setShowSuggestions(false);
+      if (onClose) onClose();
     }
   };
 
@@ -90,6 +91,7 @@ const SearchBar = () => {
     navigate(`/${item.media_type}/${item.id}`);
     setShowSuggestions(false);
     setQuery('');
+    if (onClose) onClose();
   };
 
   // Réinitialiser la recherche
@@ -110,7 +112,7 @@ const SearchBar = () => {
   const hasSuggestions = suggestions.movies.length > 0 || suggestions.tvShows.length > 0;
 
   return (
-    <div className="relative w-full max-w-lg">
+    <div className="relative w-full max-w-lg mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <input
           ref={inputRef}
@@ -120,6 +122,7 @@ const SearchBar = () => {
           onFocus={() => setShowSuggestions(true)}
           placeholder="Rechercher des films, séries..."
           className="w-full px-4 py-2 pl-10 pr-10 bg-background-light border border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-primary text-white"
+          autoFocus
         />
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
           <MagnifyingGlassIcon className="w-5 h-5" />

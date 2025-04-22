@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { MagnifyingGlassIcon, UserIcon, HeartIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import SearchBar from '../common/SearchBar';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -14,20 +13,6 @@ const Header = () => {
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
-    setSearchQuery('');
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setIsSearchOpen(false);
-      setSearchQuery('');
-    }
   };
 
   return (
@@ -111,22 +96,7 @@ const Header = () => {
         {/* Search Bar */}
         {isSearchOpen && (
           <div className="py-4 animate-fadeIn">
-            <form onSubmit={handleSearchSubmit} className="flex items-center">
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder="Rechercher des films, séries..." 
-                className="w-full p-2 rounded-l-md bg-background-light text-white border-r-0 focus:outline-none"
-                autoFocus
-              />
-              <button 
-                type="submit"
-                className="bg-primary p-2 rounded-r-md"
-              >
-                <MagnifyingGlassIcon className="w-6 h-6 text-white" />
-              </button>
-            </form>
+            <SearchBar onClose={() => setIsSearchOpen(false)} />
           </div>
         )}
       </div>
