@@ -1,91 +1,114 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
-// Service d'authentification
-const authService = {
-  // Inscription d'un utilisateur
-  register: async (userData) => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/register`, userData);
-      if (response.data.token) {
-        localStorage.setItem('user', JSON.stringify(response.data));
-      }
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Erreur lors de l\'inscription' };
-    }
-  },
-  
-  // Connexion d'un utilisateur
-  login: async (credentials) => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, credentials);
-      if (response.data.token) {
-        localStorage.setItem('user', JSON.stringify(response.data));
-      }
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Erreur lors de la connexion' };
-    }
-  },
-  
-  // Déconnexion
-  logout: () => {
-    localStorage.removeItem('user');
-  },
-  
-  // Vérification du token JWT
-  verifyToken: async () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user || !user.token) {
-      return null;
-    }
-    
-    try {
-      const response = await axios.get(`${API_URL}/auth/verify`, {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
-      });
-      return response.data;
-    } catch (error) {
-      // Si le token est invalide, déconnecter l'utilisateur
-      localStorage.removeItem('user');
-      throw error.response?.data || { message: 'Token invalide' };
-    }
-  },
-  
-  // Récupérer l'utilisateur courant depuis le localStorage
-  getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  },
-  
-  // Récupérer le token JWT
-  getToken: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user).token : null;
-  },
-  
-  // Vérifier si l'utilisateur est connecté
-  isLoggedIn: () => {
-    return !!localStorage.getItem('user');
-  }
-};
+// Récupérer le token JWT du localStorage
+export const getToken = () => localStorage.getItem('token');
 
-// Intercepteur pour ajouter le token à toutes les requêtes
-axios.interceptors.request.use(
+// Configurer axios avec le token d'authentification
+const authAxios = axios.create({
+  baseURL: API_URL
+});
+
+// Intercepteur pour ajouter le token d'authentification à chaque requête
+authAxios.interceptors.request.use(
   (config) => {
-    const token = authService.getToken();
-    if (token && !config.url.includes('themoviedb.org')) {
+    const token = getToken();
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
+
+// Service pour l'authentification
+const authService = {
+  /**
+   * Inscription d'un nouvel utilisateur
+   * @param {Object} userData - Données de l'utilisateur (username, email, password)
+   * @returns {Promise} - Résultat de l'API avec l'utilisateur et le token
+   */
+  register: async (userData) => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/register`, userData);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de l\'inscription:', error);
+      
+      // Gestion des erreurs spécifiques
+      if (error.response) {
+        if (error.response.status === 409) {
+          throw new Error('Cet email est déjà utilisé');
+        }
+        throw new Error(error.response.data.message || 'Erreur lors de l\'inscription');
+      }
+      
+      throw new Error('Erreur lors de l\'inscription');
+    }
+  },
+
+  /**
+   * Connexion d'un utilisateur
+   * @param {Object} credentials - Identifiants de connexion (email, password)
+   * @returns {Promise} - Résultat de l'API avec l'utilisateur et le token
+   */
+  login: async (credentials) => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/login`, credentials);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la connexion:', error);
+      
+      // Gestion des erreurs spécifiques
+      if (error.response) {
+        if (error.response.status === 401) {
+          throw new Error('Email ou mot de passe incorrect');
+        }
+        throw new Error(error.response.data.message || 'Erreur lors de la connexion');
+      }
+      
+      throw new Error('Erreur lors de la connexion');
+    }
+  },
+
+  /**
+   * Vérification du token JWT
+   * @returns {Promise} - Résultat de l'API avec les données de l'utilisateur
+   */
+  verifyToken: async () => {
+    try {
+      const response = await authAxios.get(`${API_URL}/auth/verify`);
+      return response.data.user;
+    } catch (error) {
+      console.error('Erreur lors de la vérification du token:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mise à jour du profil utilisateur
+   * @param {Object} userData - Nouvelles données de l'utilisateur
+   * @returns {Promise} - Résultat de l'API avec l'utilisateur mis à jour
+   */
+  updateProfile: async (userData) => {
+    try {
+      const response = await authAxios.put(`${API_URL}/users/profile`, userData);
+      return response.data.user;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du profil:', error);
+      
+      // Gestion des erreurs spécifiques
+      if (error.response) {
+        if (error.response.status === 409) {
+          throw new Error('Cet email est déjà utilisé');
+        }
+        throw new Error(error.response.data.message || 'Erreur lors de la mise à jour du profil');
+      }
+      
+      throw new Error('Erreur lors de la mise à jour du profil');
+    }
+  }
+};
 
 export default authService; 
