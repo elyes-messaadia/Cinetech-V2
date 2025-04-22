@@ -168,6 +168,52 @@ const tmdbService = {
   },
 
   /**
+   * Rechercher des films uniquement
+   * @param {string} query - Terme de recherche
+   * @param {number} page - Numéro de page
+   * @param {Object} additionalParams - Paramètres additionnels (filtres)
+   * @returns {Promise} - Résultat de l'API
+   */
+  searchMovies: async (query, page = 1, additionalParams = {}) => {
+    try {
+      const response = await tmdbApi.get('/search/movie', {
+        params: { 
+          query, 
+          page,
+          ...additionalParams
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la recherche de films:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Rechercher des séries uniquement
+   * @param {string} query - Terme de recherche
+   * @param {number} page - Numéro de page
+   * @param {Object} additionalParams - Paramètres additionnels (filtres)
+   * @returns {Promise} - Résultat de l'API
+   */
+  searchTVShows: async (query, page = 1, additionalParams = {}) => {
+    try {
+      const response = await tmdbApi.get('/search/tv', {
+        params: { 
+          query, 
+          page,
+          ...additionalParams
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la recherche de séries:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Récupérer les genres de films
    * @returns {Promise} - Résultat de l'API
    */
