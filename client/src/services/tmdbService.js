@@ -61,6 +61,40 @@ const tmdbService = {
   },
 
   /**
+   * Découvrir des films avec filtres
+   * @param {Object} options - Options de filtrage (page, genres, année, note, etc.)
+   * @returns {Promise} - Résultat de l'API
+   */
+  discoverMovies: async (options = {}) => {
+    try {
+      const response = await tmdbApi.get('/discover/movie', {
+        params: options
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la découverte des films:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Découvrir des séries TV avec filtres
+   * @param {Object} options - Options de filtrage (page, genres, année, note, etc.)
+   * @returns {Promise} - Résultat de l'API
+   */
+  discoverTVShows: async (options = {}) => {
+    try {
+      const response = await tmdbApi.get('/discover/tv', {
+        params: options
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la découverte des séries:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Récupérer les films à venir
    * @param {number} page - Numéro de page
    * @returns {Promise} - Résultat de l'API
@@ -157,6 +191,25 @@ const tmdbService = {
       return response.data.genres;
     } catch (error) {
       console.error('Erreur lors de la récupération des genres de séries:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Récupérer les commentaires d'un film ou d'une série
+   * @param {string} mediaType - Type de média (movie ou tv)
+   * @param {number} id - ID du média
+   * @param {number} page - Numéro de page
+   * @returns {Promise} - Résultat de l'API
+   */
+  getComments: async (mediaType, id, page = 1) => {
+    try {
+      const response = await tmdbApi.get(`/${mediaType}/${id}/reviews`, {
+        params: { page }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Erreur lors de la récupération des commentaires:`, error);
       throw error;
     }
   }
