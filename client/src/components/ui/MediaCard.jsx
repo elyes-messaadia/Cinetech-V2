@@ -1,94 +1,89 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { StarIcon, HeartIcon } from '@heroicons/react/24/solid';
-import { HeartIcon as HeartOutlineIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../../context/AuthContext';
 
-const MediaCard = ({ item, type }) => {
-  const { isAuthenticated } = useAuth();
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false); // À connecter avec l'API plus tard
+// Image placeholder encodée en base64 (version simplifiée grise)
+const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAAKACAMAAAC5ltSmAAAAQlBMVEUAAABoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhE8etxAAAAFXRSTlMA0BDwgMCgIHDQYOCwUJBAkDBwoFDY908/AAABrklEQVR42u3c227CMAyF4aSHpj0A3d7/VWfYkIANqQE58vp9N3ORH8sxjdO2AQAAAAAAAAAAAABgbKvHz6FHXW8IGMQWMIgtYBBbwCC2gEFsAYPYTrX1Tl64Ei6XVLdeWsTLJdWtl5pwy9pcd5+1Nd2VgkFKwCAlYJASMEgJGKQEDFICBikBg5SAQUrAICVgkBIwSAkYpEwy2S0pKrq20bW1ru11batrra6tdG2payabyFi+4ixVfZxr3amWi64tdc1kExnpRCaq1rrFZc/3mEU7vqz+OrgH1zLZLC2iTpWc2iIpndJuTqE+iDqt9Yvctcn8Mqx1arJ3K+SXpOTcZU9GNtA/kZKdSJu8QFVL2e7cVE3pkLbDMsulpO+Zx5Z4/vLKOGpV3z+gj9a6Occ7Mdk4XrJ8/lf/rHP58wj1iJWcl6lj6qMB+zGQlEwS6Mn82n2XJP+wdfHq/FPz2lZnkCebX58tZZLdm0z1slrL291B5nZ/VkTrR2OO0fqBnmu03nHkHK13LL1H610f5NFaAQEBB6IFUdvWZIcW++63Yw4AAAAAAAAAAAAAwP/xA9zoL1fPcbegAAAAAElFTkSuQmCC';
+
+const MediaCard = ({ media, type }) => {
+  const [imageError, setImageError] = useState(false);
+
+  // Vérifier si les données requises sont disponibles
+  if (!media || !media.id) {
+    return (
+      <div className="bg-gray-800 rounded-lg w-64 h-96 animate-pulse"></div>
+    );
+  }
+
+  // Déterminer automatiquement le type si non fourni
+  const mediaType = type || (media.title ? 'movie' : 'tv');
   
-  if (!item) return null;
+  // Obtenir le titre selon le type
+  const title = mediaType === 'movie' ? media.title : media.name;
   
-  const title = type === 'movie' ? item.title : item.name;
-  const releaseDate = type === 'movie' ? item.release_date : item.first_air_date;
-  const year = releaseDate ? new Date(releaseDate).getFullYear() : '';
-  const rating = item.vote_average ? Math.round(item.vote_average * 10) / 10 : null;
-  
-  const handleFavoriteClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!isAuthenticated) {
-      // Rediriger vers la page de connexion ou afficher un message
-      alert('Veuillez vous connecter pour ajouter des favoris');
-      return;
-    }
-    
-    // Logique pour ajouter/retirer des favoris (à implémenter)
-    setIsFavorite(!isFavorite);
-  };
-  
-  // Construire l'URL de l'image
-  const getImageUrl = (path) => {
-    if (!path) return '/images/poster-placeholder.png';
-    return `https://image.tmdb.org/t/p/w500${path}`;
+  // Chemin de navigation vers la page de détails
+  const detailPath = `/${mediaType}/${media.id}`;
+
+  // Gestion des erreurs d'image
+  const handleImageError = () => {
+    console.log("Erreur de chargement d'image pour:", title);
+    setImageError(true);
   };
 
   return (
-    <Link 
-      to={`/${type}/${item.id}`}
-      className="block group relative rounded-lg overflow-hidden shadow-lg h-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Image principale */}
-      <div className="aspect-[2/3] relative overflow-hidden">
-        <img 
-          src={getImageUrl(item.poster_path)} 
-          alt={title}
-          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-          loading="lazy"
-        />
-        
-        {/* Overlay au survol */}
-        <div 
-          className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-        
-        {/* Badge de notation */}
-        {rating && (
-          <div className="absolute top-2 left-2 bg-black/60 text-white text-xs py-1 px-2 rounded flex items-center">
-            <StarIcon className="w-3 h-3 text-yellow-400 mr-1" />
-            <span>{rating}</span>
-          </div>
-        )}
-        
-        {/* Bouton favoris */}
-        {isAuthenticated && (
-          <button
-            onClick={handleFavoriteClick}
-            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-primary/80 transition-colors"
-            aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
-          >
-            {isFavorite ? (
-              <HeartIcon className="w-4 h-4 text-red-500" />
+    <div className="flex-none w-64 min-w-64 transition-transform duration-300 hover:scale-105">
+      <Link to={detailPath} className="block h-full">
+        <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg h-full">
+          {/* Affiche du film/série */}
+          <div className="relative aspect-[2/3] bg-gray-700">
+            {!imageError && media.poster_path ? (
+              <img 
+                src={`https://image.tmdb.org/t/p/w500${media.poster_path}`}
+                alt={title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={handleImageError}
+              />
             ) : (
-              <HeartOutlineIcon className="w-4 h-4" />
+              <div 
+                className="w-full h-full flex items-center justify-center bg-gray-800 text-center p-4 text-gray-400"
+                style={{ 
+                  backgroundImage: `url(${PLACEHOLDER_IMAGE})`,
+                  backgroundPosition: 'center',
+                  backgroundSize: 'cover'
+                }}
+              >
+                <span className="bg-black bg-opacity-70 p-2 rounded">{title || "Image non disponible"}</span>
+              </div>
             )}
-          </button>
-        )}
-      </div>
-      
-      {/* Informations du film/série */}
-      <div className="p-3 bg-background-light">
-        <h3 className="text-white font-medium text-sm truncate mb-1">{title}</h3>
-        <p className="text-gray-400 text-xs">{year}</p>
-      </div>
-    </Link>
+            
+            {/* Badge de note */}
+            {media.vote_average > 0 && (
+              <div className="absolute bottom-2 left-2 bg-primary text-white text-sm font-bold px-2 py-1 rounded-md">
+                {Math.round(media.vote_average * 10) / 10}
+              </div>
+            )}
+          </div>
+          
+          {/* Informations sur le média */}
+          <div className="p-4">
+            <h3 className="text-lg font-semibold line-clamp-2 mb-2">{title}</h3>
+            
+            <div className="text-sm text-gray-400">
+              {media.release_date && (
+                <span>
+                  {new Date(media.release_date).getFullYear()}
+                </span>
+              )}
+              {media.first_air_date && (
+                <span>
+                  {new Date(media.first_air_date).getFullYear()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </Link>
+    </div>
   );
 };
 

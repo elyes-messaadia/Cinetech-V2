@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test d'Images TMDB</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .image-container {
+            margin-bottom: 30px;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .image-container h2 {
+            margin-top: 0;
+        }
+        .image-test {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .image-item {
+            display: flex;
+            flex-direction: column;
+            width: 200px;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 4px;
+            height: auto;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        .image-status {
+            margin-top: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test d'Images TMDB</h1>
+    
+    <div class="image-container">
+        <h2>Images de films populaires</h2>
+        <div class="image-test" id="movie-images">
+            <!-- Les images seront ajoutées ici par JavaScript -->
+        </div>
+    </div>
+
+    <div class="image-container">
+        <h2>Image Placeholder de secours</h2>
+        <div class="image-test">
+            <div class="image-item">
+                <img src="/images/poster-placeholder.png" alt="Placeholder" onerror="this.nextElementSibling.innerHTML='ERREUR: Image non chargée'; this.nextElementSibling.className='error';">
+                <div class="image-status"></div>
+                <p>Chemin: /images/poster-placeholder.png</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Clé API TMDB
+        const API_KEY = '421604baebe95c1c626c74b739d20466';
+        
+        // Récupérer les films populaires
+        fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=fr-FR`)
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('movie-images');
+                
+                // Prendre les 3 premiers films
+                data.results.slice(0, 3).forEach(movie => {
+                    const posterPath = movie.poster_path;
+                    const posterUrl = posterPath ? `https://image.tmdb.org/t/p/w500${posterPath}` : '/images/poster-placeholder.png';
+                    
+                    const imageItem = document.createElement('div');
+                    imageItem.className = 'image-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = posterUrl;
+                    img.alt = movie.title;
+                    img.onerror = function() {
+                        this.nextElementSibling.innerHTML = 'ERREUR: Image non chargée';
+                        this.nextElementSibling.className = 'error';
+                    };
+                    img.onload = function() {
+                        this.nextElementSibling.innerHTML = 'Succès: Image chargée';
+                        this.nextElementSibling.className = 'success';
+                    };
+                    
+                    const status = document.createElement('div');
+                    status.className = 'image-status';
+                    
+                    const path = document.createElement('p');
+                    path.textContent = `Chemin: ${posterUrl}`;
+                    
+                    imageItem.appendChild(img);
+                    imageItem.appendChild(status);
+                    imageItem.appendChild(path);
+                    container.appendChild(imageItem);
+                });
+            })
+            .catch(error => {
+                console.error('Erreur lors de la récupération des films:', error);
+                document.getElementById('movie-images').innerHTML = `<div class="error">Erreur API: ${error.message}</div>`;
+            });
+    </script>
+</body>
+</html> 

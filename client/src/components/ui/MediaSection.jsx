@@ -3,119 +3,151 @@ import { Link } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import MediaCard from './MediaCard';
 
-const MediaSection = ({ title, items = [], type, viewMoreLink }) => {
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
-  const scrollContainerRef = useRef(null);
-
-  // Vérifier si les flèches doivent être affichées
+const MediaSection = ({ title, items = [], type, viewMoreLink, isLoading = false }) => {
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const containerRef = useRef(null);
+  
+  // Vérifier les possibilités de défilement
   useEffect(() => {
-    const checkArrows = () => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
+    const checkScrollability = () => {
+      if (!containerRef.current) return;
       
-      setShowLeftArrow(container.scrollLeft > 0);
-      setShowRightArrow(container.scrollLeft < (container.scrollWidth - container.clientWidth - 10));
+      const container = containerRef.current;
+      setCanScrollLeft(scrollPosition > 0);
+      setCanScrollRight(scrollPosition < container.scrollWidth - container.clientWidth - 10);
     };
     
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', checkArrows);
-      checkArrows(); // Vérifier au montage
-      
-      // Vérifier après le chargement complet des images
-      setTimeout(checkArrows, 1000);
+    checkScrollability();
+    
+    // Observer les changements de taille pour mettre à jour l'état de défilement
+    const resizeObserver = new ResizeObserver(() => {
+      checkScrollability();
+    });
+    
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
     }
     
     return () => {
-      if (container) {
-        container.removeEventListener('scroll', checkArrows);
+      if (containerRef.current) {
+        resizeObserver.unobserve(containerRef.current);
       }
     };
-  }, [items]);
+  }, [scrollPosition, items]);
   
-  // Faire défiler vers la gauche
-  const scrollLeft = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({
-        left: -container.clientWidth + 100,
-        behavior: 'smooth'
-      });
-    }
+  // Gestion du défilement horizontal
+  const scroll = (direction) => {
+    if (!containerRef.current) return;
+    
+    const container = containerRef.current;
+    const cardWidth = container.querySelector('div')?.offsetWidth + 16 || 300; // 16 = gap (4*4)
+    const scrollAmount = cardWidth * 3; // Défiler par 3 cartes
+    
+    const newPosition = direction === 'left' 
+      ? Math.max(0, scrollPosition - scrollAmount)
+      : Math.min(
+          container.scrollWidth - container.clientWidth,
+          scrollPosition + scrollAmount
+        );
+    
+    container.scrollTo({
+      left: newPosition,
+      behavior: 'smooth'
+    });
+    
+    setScrollPosition(newPosition);
   };
   
-  // Faire défiler vers la droite
-  const scrollRight = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({
-        left: container.clientWidth - 100,
-        behavior: 'smooth'
-      });
-    }
+  // Gestionnaire de défilement
+  const handleScroll = (e) => {
+    setScrollPosition(e.target.scrollLeft);
   };
   
-  // Si pas d'éléments, ne rien afficher
-  if (!items.length) {
+  // Vérifier si la section est vide
+  if (!items || !items.length) {
+    if (isLoading) {
+      return (
+        <div className="py-4">
+          <h2 className="text-2xl font-bold mb-4">{title}</h2>
+          <div className="flex space-x-4 pb-4">
+            {[...Array(5)].map((_, index) => (
+              <div key={index} className="w-64 h-96 bg-gray-800 animate-pulse rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    
     return null;
   }
 
   return (
-    <section className="relative">
+    <div className="relative">
+      {/* En-tête de section */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
+        <h2 className="text-2xl font-bold">{title}</h2>
+        
         {viewMoreLink && (
           <Link 
-            to={viewMoreLink} 
-            className="text-primary hover:text-primary-light transition-colors font-medium"
+            to={viewMoreLink}
+            className="text-primary hover:text-primary-light transition-colors"
           >
             Voir plus
           </Link>
         )}
       </div>
       
+      {/* Conteneur de défilement */}
       <div className="relative">
-        {/* Flèche gauche */}
-        {showLeftArrow && (
-          <button 
-            onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-full px-2 py-20 flex items-center justify-center bg-gradient-to-r from-background to-transparent"
+        {/* Bouton de défilement gauche */}
+        {items.length > 4 && (
+          <button
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-background/80 border border-gray-700 text-white 
+              ${canScrollLeft 
+                ? 'hover:bg-primary hover:border-primary' 
+                : 'opacity-50 cursor-not-allowed'}`}
             aria-label="Défiler vers la gauche"
           >
-            <div className="bg-black/50 hover:bg-black/70 transition p-2 rounded-full">
-              <ChevronLeftIcon className="w-6 h-6 text-white" />
-            </div>
+            <ChevronLeftIcon className="w-5 h-5" />
           </button>
         )}
         
-        {/* Liste de médias défilante */}
+        {/* Liste des médias */}
         <div 
-          ref={scrollContainerRef}
-          className="flex overflow-x-auto hide-scrollbar snap-x gap-4 pb-4"
-          style={{ scrollbarWidth: 'none' }}
+          ref={containerRef}
+          className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide"
+          style={{ scrollBehavior: 'smooth' }}
+          onScroll={handleScroll}
         >
-          {items.map((item, index) => (
-            <div key={index} className="flex-none snap-start" style={{ width: '200px' }}>
-              <MediaCard item={item} type={type} />
-            </div>
+          {items.map(item => (
+            <MediaCard 
+              key={item.id || Math.random().toString(36).substr(2, 9)}
+              media={item} 
+              type={type || (item.title ? 'movie' : 'tv')} 
+            />
           ))}
         </div>
         
-        {/* Flèche droite */}
-        {showRightArrow && (
-          <button 
-            onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-full px-2 py-20 flex items-center justify-center bg-gradient-to-l from-background to-transparent"
+        {/* Bouton de défilement droit */}
+        {items.length > 4 && (
+          <button
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-background/80 border border-gray-700 text-white 
+              ${canScrollRight 
+                ? 'hover:bg-primary hover:border-primary' 
+                : 'opacity-50 cursor-not-allowed'}`}
             aria-label="Défiler vers la droite"
           >
-            <div className="bg-black/50 hover:bg-black/70 transition p-2 rounded-full">
-              <ChevronRightIcon className="w-6 h-6 text-white" />
-            </div>
+            <ChevronRightIcon className="w-5 h-5" />
           </button>
         )}
       </div>
-    </section>
+    </div>
   );
 };
 

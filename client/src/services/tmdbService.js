@@ -1,13 +1,52 @@
 import axios from 'axios';
 
+// Vérifier si la clé API TMDB est définie
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+
+if (!TMDB_API_KEY) {
+  console.error('ERREUR: La clé API TMDB (VITE_TMDB_API_KEY) n\'est pas définie dans le fichier .env');
+} else {
+  console.log('Clé API TMDB trouvée:', TMDB_API_KEY.substring(0, 5) + '...');
+}
+
 // Créer une instance axios pour l'API TMDb
 const tmdbApi = axios.create({
   baseURL: 'https://api.themoviedb.org/3',
   params: {
-    api_key: import.meta.env.VITE_TMDB_API_KEY,
+    api_key: TMDB_API_KEY,
     language: 'fr-FR'
   }
 });
+
+// Intercepteur pour les requêtes
+tmdbApi.interceptors.request.use(
+  config => {
+    console.log(`Requête TMDB: ${config.method.toUpperCase()} ${config.url}`);
+    return config;
+  },
+  error => {
+    console.error('Erreur dans la requête TMDB:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Intercepteur pour les réponses
+tmdbApi.interceptors.response.use(
+  response => {
+    console.log(`Réponse TMDB: ${response.status} ${response.config.url}`);
+    return response;
+  },
+  error => {
+    if (error.response) {
+      console.error(`Erreur TMDB ${error.response.status}: ${error.response.data.status_message || error.message}`);
+    } else if (error.request) {
+      console.error('Aucune réponse reçue de TMDB:', error.request);
+    } else {
+      console.error('Erreur lors de la configuration de la requête TMDB:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Service pour les appels à l'API TMDb
 const tmdbService = {
@@ -18,7 +57,10 @@ const tmdbService = {
    */
   getTrending: async (timeWindow = 'week') => {
     try {
+      if (!TMDB_API_KEY) throw new Error('Clé API TMDB non définie');
+      console.log(`Récupération des tendances (${timeWindow})...`);
       const response = await tmdbApi.get(`/trending/all/${timeWindow}`);
+      console.log(`Tendances récupérées: ${response.data.results.length} résultats`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des tendances:', error);
@@ -33,9 +75,11 @@ const tmdbService = {
    */
   getPopularMovies: async (page = 1) => {
     try {
+      console.log(`Récupération des films populaires (page ${page})...`);
       const response = await tmdbApi.get('/movie/popular', {
         params: { page }
       });
+      console.log(`Films populaires récupérés: ${response.data.results.length} résultats`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des films populaires:', error);
@@ -50,9 +94,11 @@ const tmdbService = {
    */
   getPopularSeries: async (page = 1) => {
     try {
+      console.log(`Récupération des séries populaires (page ${page})...`);
       const response = await tmdbApi.get('/tv/popular', {
         params: { page }
       });
+      console.log(`Séries populaires récupérées: ${response.data.results.length} résultats`);
       return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des séries populaires:', error);

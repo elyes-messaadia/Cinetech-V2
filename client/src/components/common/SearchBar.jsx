@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import tmdbService from '../../services/tmdbService';
-import { debounce } from '../../utils/helpers';
 
 const SearchBar = ({ onClose }) => {
   const navigate = useNavigate();
@@ -12,6 +11,7 @@ const SearchBar = ({ onClose }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
+  const timeoutRef = useRef(null);
 
   // Fermer les suggestions quand on clique ailleurs
   useEffect(() => {
@@ -31,34 +31,58 @@ const SearchBar = ({ onClose }) => {
     };
   }, []);
 
-  // Fonction pour charger les suggestions avec debounce
-  const fetchSuggestions = debounce(async (searchQuery) => {
+  // Fonction pour charger les suggestions avec notre propre debounce
+  const fetchSuggestions = useCallback((searchQuery) => {
+    // Annuler la recherche précédente si elle existe
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Si la requête est vide, on réinitialise les suggestions
     if (!searchQuery.trim()) {
       setSuggestions({ movies: [], tvShows: [] });
       setLoading(false);
       return;
     }
 
-    try {
-      setLoading(true);
-      const data = await tmdbService.searchMulti(searchQuery);
-      
-      // Séparer les résultats par type (film ou série)
-      const movies = data.results
-        .filter(item => item.media_type === 'movie')
-        .slice(0, 5);
+    // On active le chargement
+    setLoading(true);
+
+    // On crée un nouveau timeout pour la recherche
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const data = await tmdbService.searchMulti(searchQuery);
         
-      const tvShows = data.results
-        .filter(item => item.media_type === 'tv')
-        .slice(0, 5);
+        // Séparer les résultats par type (film ou série)
+        const movies = data.results
+          .filter(item => item.media_type === 'movie')
+          .slice(0, 5);
+          
+        const tvShows = data.results
+          .filter(item => item.media_type === 'tv')
+          .slice(0, 5);
+        
+        setSuggestions({ movies, tvShows });
+        setLoading(false);
+      } catch (error) {
+        console.error('Erreur lors de la recherche de suggestions:', error);
+        setSuggestions({ movies: [], tvShows: [] });
+        setLoading(false);
+      }
       
-      setSuggestions({ movies, tvShows });
-      setLoading(false);
-    } catch (error) {
-      console.error('Erreur lors de la recherche de suggestions:', error);
-      setLoading(false);
-    }
-  }, 300);
+      // Réinitialiser la référence du timeout
+      timeoutRef.current = null;
+    }, 300);
+  }, []);
+
+  // Nettoyage du timeout à la destruction du composant
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   // Mise à jour des suggestions à chaque changement de requête
   useEffect(() => {
@@ -66,6 +90,7 @@ const SearchBar = ({ onClose }) => {
       fetchSuggestions(query);
     } else {
       setSuggestions({ movies: [], tvShows: [] });
+      setLoading(false);
     }
   }, [query, fetchSuggestions]);
 
