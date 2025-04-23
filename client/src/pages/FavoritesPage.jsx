@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import favoriteService from '../services/favoriteService';
 import tmdbService from '../services/tmdbService';
 import MediaCard from '../components/ui/MediaCard';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 
 const FavoritesPage = () => {
