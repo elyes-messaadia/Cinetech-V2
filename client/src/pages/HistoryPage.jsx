@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ClockIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { ClockIcon, StarIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const HistoryPage = () => {
   const { isAuthenticated } = useAuth();

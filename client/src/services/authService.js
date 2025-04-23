@@ -112,26 +112,3 @@ const authService = {
 };
 
 export default authService; 
-   * @returns {Promise} - Résultat de l'API avec l'utilisateur mis à jour
-   */
-  updateProfile: async (userData) => {
-    try {
-      const response = await authAxios.put(`${API_URL}/users/profile`, userData);
-      return response.data.user;
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du profil:', error);
-      
-      // Gestion des erreurs spécifiques
-      if (error.response) {
-        if (error.response.status === 409) {
-          throw new Error('Cet email est déjà utilisé');
-        }
-        throw new Error(error.response.data.message || 'Erreur lors de la mise à jour du profil');
-      }
-      
-      throw new Error('Erreur lors de la mise à jour du profil');
-    }
-  }
-};
-
-export default authService; 

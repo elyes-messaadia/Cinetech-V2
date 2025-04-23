@@ -135,7 +135,7 @@ const tmdbService = {
    * @param {number} id - ID de la série
    * @returns {Promise} - Résultat de l'API
    */
-  getSeriesDetails: async (id) => {
+  getTvDetails: async (id) => {
     try {
       const response = await tmdbApi.get(`/tv/${id}`, {
         params: {

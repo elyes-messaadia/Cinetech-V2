@@ -15,6 +15,7 @@ import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { AuthProvider } from './context/AuthContext';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import PrivateRoute from './components/auth/PrivateRoute';
 
 // Lazy loading des composants moins critiques
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
@@ -37,11 +38,11 @@ function App() {
               <Route path="discover" element={<DiscoverPage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
-              <Route path="favorites" element={<FavoritesPage />} />
-              <Route path="watchlist" element={<WatchlistPage />} />
-              <Route path="history" element={<HistoryPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="settings" element={<SettingsPage />} />
+              <Route path="favorites" element={<PrivateRoute><FavoritesPage /></PrivateRoute>} />
+              <Route path="watchlist" element={<PrivateRoute><WatchlistPage /></PrivateRoute>} />
+              <Route path="history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
+              <Route path="profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route path="settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

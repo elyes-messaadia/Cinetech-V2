@@ -5,7 +5,7 @@ import { HeartIcon as HeartOutlineIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 
 const MediaCard = ({ item, type }) => {
-  const { isAuthenticated, user: _user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false); // À connecter avec l'API plus tard
   

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 
-const FilterPanel = ({ genres, filters, onFilterChange, mediaType }) => {
+const FilterPanel = ({ genres, filters, onFilterChange }) => {
   const [localFilters, setLocalFilters] = useState(filters);
   const [showFilters, setShowFilters] = useState(true);
   const [years, setYears] = useState([]);

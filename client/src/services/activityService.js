@@ -122,6 +122,7 @@ const activityService = {
    * @param {number} activityId - ID de l'activité à supprimer
    * @returns {Promise} - Résultat de l'API
    */
+  // eslint-disable-next-line no-unused-vars
   deleteActivity: async (activityId) => {
     try {
       // Cette fonction appelle l'API, mais pour le moment elle renvoie une promesse résolue
