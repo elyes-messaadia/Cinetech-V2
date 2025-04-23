@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import { HeartIcon, ClockIcon, CalendarIcon, FilmIcon, UserIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import MediaCarousel from '../components/ui/MediaCarousel';
-import tmdbService from '../services/tmdbService';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+
+// Import fictif du service qui sera créé plus tard
+// import { fetchMovieDetails, fetchMovieCredits, fetchSimilarMovies } from '../services/tmdbService';
 
 const MovieDetailPage = () => {
   const { id } = useParams();
@@ -20,17 +21,56 @@ const MovieDetailPage = () => {
       try {
         setLoading(true);
         
-        // Récupérer les détails du film depuis l'API TMDb
-        const movieData = await tmdbService.getMovieDetails(id);
-        setMovie(movieData);
+        // Exemple de données statiques pour le développement
+        // Ultérieurement, ces données seraient récupérées via l'API TMDb
+        const mockMovie = {
+          id: parseInt(id),
+          title: "Dune: Part Two",
+          backdrop_path: "/rUoGZuscSG4fQP3I56ndadXRyBV.jpg",
+          poster_path: "/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg",
+          overview: "Paul Atreides s'allie à Chani et aux Fremen tout en préparant sa revanche contre ceux qui ont détruit sa famille. Alors qu'il doit faire un choix entre l'amour de sa vie et le destin de la galaxie, il s'efforce d'empêcher le terrible futur qu'il a entrevu.",
+          release_date: "2024-03-01",
+          runtime: 166,
+          vote_average: 8.2,
+          vote_count: 1245,
+          genres: [
+            { id: 878, name: "Science-Fiction" },
+            { id: 12, name: "Aventure" },
+            { id: 28, name: "Action" }
+          ]
+        };
         
-        // Les crédits et films similaires sont inclus dans la réponse avec append_to_response
-        setCredits({
-          cast: movieData.credits.cast.slice(0, 10),
-          crew: movieData.credits.crew.filter(person => person.job === 'Director' || person.job === 'Producer')
-        });
+        const mockCredits = {
+          cast: Array(10).fill().map((_, i) => ({
+            id: i + 1,
+            name: `Acteur ${i + 1}`,
+            character: `Personnage ${i + 1}`,
+            profile_path: "/2J5ecAJmN8ZCBJgjZ7iIQP5RxBt.jpg"
+          })),
+          crew: [
+            {
+              id: 101,
+              name: "Denis Villeneuve",
+              job: "Réalisateur",
+              profile_path: "/SdkKzGFXmXGNvW3gNfFKQpdkVJ.jpg"
+            }
+          ]
+        };
         
-        setSimilarMovies(movieData.similar.results.slice(0, 10));
+        const mockSimilarMovies = Array(10).fill().map((_, i) => ({
+          id: i + 100,
+          title: `Film Similaire ${i + 1}`,
+          poster_path: "/rz8GGX5Id2hCW1KzAIY4xwbQw1w.jpg",
+          release_date: "2023-11-20",
+          vote_average: 7.5 - (i * 0.1)
+        }));
+        
+        // Simuler un délai d'API
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        setMovie(mockMovie);
+        setCredits(mockCredits);
+        setSimilarMovies(mockSimilarMovies);
       } catch (err) {
         console.error("Erreur lors de la récupération des données:", err);
         setError("Une erreur est survenue lors du chargement des données du film.");
@@ -56,7 +96,7 @@ const MovieDetailPage = () => {
   if (loading) {
     return (
       <div className="container-custom py-20 flex justify-center">
-        <LoadingSpinner />
+        <div className="animate-pulse text-white text-xl">Chargement...</div>
       </div>
     );
   }

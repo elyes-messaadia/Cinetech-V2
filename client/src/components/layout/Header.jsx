@@ -1,18 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { MagnifyingGlassIcon, UserIcon, HeartIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { UserCircleIcon, ArrowRightOnRectangleIcon, Cog6ToothIcon, ClockIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import SearchBar from '../common/SearchBar';
 import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
-  const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
-  const [isScrolled, setIsScrolled] = useState(false);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -40,35 +38,14 @@ const Header = () => {
     };
   }, []);
 
-  // Détecter le défilement pour changer l'apparence du header
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-  // Fermer le menu mobile lors du changement de page
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location]);
-
   // Gérer la déconnexion
   const handleLogout = () => {
     logout();
     setIsProfileMenuOpen(false);
   };
 
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-background shadow-lg py-2' : 'bg-gradient-to-b from-background to-transparent py-4'}`}>
+    <header className="bg-background-dark fixed w-full z-50 shadow-md">
       <div className="container-custom py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -78,32 +55,14 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link
-              to="/"
-              className={`flex items-center text-sm font-medium ${isActive('/') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
-            >
-              <span>Accueil</span>
+            <Link to="/" className="text-white hover:text-primary transition-colors">
+              Accueil
             </Link>
-            
-            <Link
-              to="/movies"
-              className={`flex items-center text-sm font-medium ${isActive('/movies') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
-            >
-              <span>Films</span>
+            <Link to="/movies" className="text-white hover:text-primary transition-colors">
+              Films
             </Link>
-            
-            <Link
-              to="/series"
-              className={`flex items-center text-sm font-medium ${isActive('/series') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
-            >
-              <span>Séries</span>
-            </Link>
-            
-            <Link
-              to="/search"
-              className={`flex items-center text-sm font-medium ${isActive('/search') ? 'text-primary' : 'text-gray-300 hover:text-white'}`}
-            >
-              <span>Recherche</span>
+            <Link to="/series" className="text-white hover:text-primary transition-colors">
+              Séries
             </Link>
           </nav>
 

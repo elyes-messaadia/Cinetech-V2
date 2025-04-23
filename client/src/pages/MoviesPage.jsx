@@ -93,6 +93,7 @@ const MoviesPage = () => {
             genres={genres}
             filters={filters}
             onFilterChange={handleFilterChange}
+            mediaType="movie"
           />
         </div>
         

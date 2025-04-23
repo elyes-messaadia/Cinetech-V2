@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import favoriteService from '../services/favoriteService';
-import activityService from '../services/activityService';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { Navigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import ProfileStats from '../components/ui/ProfileStats';
-import ActivityCard from '../components/ui/ActivityCard';
+import { EyeIcon, EyeSlashIcon, FilmIcon, TvIcon, HeartIcon } from '@heroicons/react/24/outline';
 
 const ProfilePage = () => {
   const { user, updateUser, logout, isAuthenticated } = useAuth();
@@ -28,12 +25,8 @@ const ProfilePage = () => {
     totalFavorites: 0,
     movies: 0,
     tvShows: 0,
-    watched: 0,
-    watchlist: 0,
     loading: true
   });
-  const [activities, setActivities] = useState([]);
-  const [activitiesLoading, setActivitiesLoading] = useState(true);
   
   // Initialiser le formulaire avec les données de l'utilisateur
   useEffect(() => {
@@ -46,26 +39,21 @@ const ProfilePage = () => {
     }
   }, [user]);
   
-  // Charger les statistiques et les activités
+  // Charger les statistiques des favoris
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchFavoritesStats = async () => {
       if (!isAuthenticated) return;
       
-      // Récupérer les statistiques
       try {
         const favorites = await favoriteService.getUserFavorites();
         
         const movieCount = favorites.filter(fav => fav.mediaType === 'movie').length;
         const tvCount = favorites.filter(fav => fav.mediaType === 'tv').length;
         
-        // Dans un vrai cas, on récupérerait ces données depuis une API
-        // Pour l'instant, on simule avec des valeurs fictives
         setStats({
           totalFavorites: favorites.length,
           movies: movieCount,
           tvShows: tvCount,
-          watched: Math.floor(Math.random() * 50) + 10, // Valeur fictive
-          watchlist: Math.floor(Math.random() * 30) + 5, // Valeur fictive
           loading: false
         });
       } catch (err) {
@@ -75,20 +63,9 @@ const ProfilePage = () => {
           loading: false
         }));
       }
-      
-      // Récupérer les activités récentes
-      try {
-        setActivitiesLoading(true);
-        const userActivities = await activityService.getUserActivities(5);
-        setActivities(userActivities);
-        setActivitiesLoading(false);
-      } catch (err) {
-        console.error('Erreur lors du chargement des activités:', err);
-        setActivitiesLoading(false);
-      }
     };
     
-    fetchUserData();
+    fetchFavoritesStats();
   }, [isAuthenticated]);
   
   const handleChange = (e) => {
@@ -187,18 +164,10 @@ const ProfilePage = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-white mb-8">Mon Profil</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Section des statistiques */}
-        <div className="lg:col-span-1 order-2 lg:order-1">
-          <div className="bg-background-light rounded-lg p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Mes statistiques</h2>
-            <ProfileStats stats={stats} loading={stats.loading} />
-          </div>
-        </div>
-        
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Informations du profil */}
-        <div className="lg:col-span-3 order-1 lg:order-2">
-          <div className="bg-background-light rounded-lg p-6 mb-6">
+        <div className="md:col-span-2">
+          <div className="bg-background-light rounded-lg p-6">
             {successMessage && (
               <div className="bg-green-500/20 border border-green-500 text-green-500 p-4 rounded mb-6">
                 {successMessage}
@@ -392,24 +361,57 @@ const ProfilePage = () => {
               </div>
             </form>
           </div>
-          
-          {/* Section des activités récentes */}
+        </div>
+        
+        {/* Statistiques */}
+        <div>
           <div className="bg-background-light rounded-lg p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Activités récentes</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Mes statistiques</h2>
             
-            {activitiesLoading ? (
+            {stats.loading ? (
               <div className="flex justify-center py-6">
-                <LoadingSpinner />
-              </div>
-            ) : activities.length === 0 ? (
-              <div className="bg-background rounded-lg p-4 text-center">
-                <p className="text-gray-400">Aucune activité récente</p>
+                <LoadingSpinner size="small" />
               </div>
             ) : (
-              <div className="space-y-3">
-                {activities.map(activity => (
-                  <ActivityCard key={activity.id} activity={activity} />
-                ))}
+              <div className="space-y-4">
+                <div className="bg-background rounded-lg p-4 flex items-center">
+                  <div className="bg-background-dark/50 p-3 rounded-full mr-4">
+                    <HeartIcon className="w-6 h-6 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Total favoris</p>
+                    <p className="text-white text-xl font-bold">{stats.totalFavorites}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-background rounded-lg p-4 flex items-center">
+                  <div className="bg-background-dark/50 p-3 rounded-full mr-4">
+                    <FilmIcon className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Films favoris</p>
+                    <p className="text-white text-xl font-bold">{stats.movies}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-background rounded-lg p-4 flex items-center">
+                  <div className="bg-background-dark/50 p-3 rounded-full mr-4">
+                    <TvIcon className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Séries favorites</p>
+                    <p className="text-white text-xl font-bold">{stats.tvShows}</p>
+                  </div>
+                </div>
+                
+                <div className="mt-6">
+                  <a 
+                    href="/favorites" 
+                    className="block w-full text-center px-4 py-2 bg-background-dark hover:bg-background-dark/80 text-white rounded"
+                  >
+                    Voir tous mes favoris
+                  </a>
+                </div>
               </div>
             )}
           </div>

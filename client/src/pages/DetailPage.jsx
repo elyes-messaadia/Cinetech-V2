@@ -31,7 +31,7 @@ const DetailPage = ({ mediaType }) => {
         if (mediaType === 'movie') {
           data = await tmdbService.getMovieDetails(id);
         } else if (mediaType === 'tv') {
-          data = await tmdbService.getTvDetails(id);
+          data = await tmdbService.getSeriesDetails(id);
         }
         
         setMedia(data);
@@ -256,154 +256,82 @@ const DetailPage = ({ mediaType }) => {
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Colonne de gauche: Informations supplémentaires */}
-          <div className="md:col-span-1">
-            <h2 className="text-xl text-white font-semibold mb-4">Informations</h2>
-            
-            <div className="bg-background-light rounded-lg p-4 space-y-4">
-              {/* Réalisateur / Créateur */}
-              {mediaType === 'movie' ? (
-                <div>
-                  <h3 className="text-gray-400 text-sm">Réalisateur</h3>
-                  <p className="text-white">{getDirector()}</p>
-                </div>
-              ) : (
-                <div>
-                  <h3 className="text-gray-400 text-sm">Créé par</h3>
-                  <p className="text-white">
-                    {media.created_by && media.created_by.length
-                      ? media.created_by.map(creator => creator.name).join(', ')
-                      : 'Non disponible'}
-                  </p>
-                </div>
-              )}
-              
-              {/* Status et autres détails spécifiques aux séries */}
-              {mediaType === 'tv' && (
-                <>
-                  <div>
-                    <h3 className="text-gray-400 text-sm">Statut</h3>
-                    <p className="text-white">{media.status || 'Non disponible'}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-gray-400 text-sm">Saisons</h3>
-                    <p className="text-white">{media.number_of_seasons || '0'}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-gray-400 text-sm">Épisodes</h3>
-                    <p className="text-white">{media.number_of_episodes || '0'}</p>
-                  </div>
-                </>
-              )}
-              
-              {/* Pays de production */}
-              <div>
-                <h3 className="text-gray-400 text-sm">Pays d'origine</h3>
-                <p className="text-white">
-                  {media.production_countries && media.production_countries.length
-                    ? media.production_countries.map(country => country.name).join(', ')
-                    : 'Non disponible'}
-                </p>
-              </div>
-              
-              {/* Langue originale */}
-              <div>
-                <h3 className="text-gray-400 text-sm">Langue originale</h3>
-                <p className="text-white">
-                  {media.original_language 
-                    ? new Intl.DisplayNames(['fr'], { type: 'language' }).of(media.original_language)
-                    : 'Non disponible'}
-                </p>
-              </div>
-              
-              {/* Budget et revenus pour les films */}
-              {mediaType === 'movie' && (
-                <>
-                  <div>
-                    <h3 className="text-gray-400 text-sm">Budget</h3>
-                    <p className="text-white">
-                      {media.budget 
-                        ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD' }).format(media.budget)
-                        : 'Non disponible'}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-gray-400 text-sm">Recettes</h3>
-                    <p className="text-white">
-                      {media.revenue 
-                        ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD' }).format(media.revenue)
-                        : 'Non disponible'}
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
+      <div className="container mx-auto px-4 mt-8">
+        {/* Casting et équipe */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-white mb-6">Casting & Équipe</h2>
+          
+          {/* Réalisateur/Créateur */}
+          <div className="mb-4">
+            <h3 className="text-lg text-white mb-2">
+              {mediaType === 'movie' ? 'Réalisateur' : 'Créateur(s)'}
+            </h3>
+            <p className="text-gray-300">
+              {mediaType === 'movie' ? getDirector() : 
+                (media.created_by && media.created_by.length 
+                  ? media.created_by.map(creator => creator.name).join(', ') 
+                  : 'Non disponible')
+              }
+            </p>
           </div>
           
-          {/* Colonne de droite: Casting, recommandations, commentaires */}
-          <div className="md:col-span-2">
-            {/* Casting */}
-            <section className="mb-8">
-              <h2 className="text-xl text-white font-semibold mb-4">Casting</h2>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {getMainCast().map(actor => (
-                  <div key={actor.id} className="bg-background-light rounded-lg overflow-hidden">
-                    <div className="aspect-[2/3] relative overflow-hidden">
-                      <img 
-                        src={actor.profile_path 
-                          ? `https://image.tmdb.org/t/p/w200${actor.profile_path}`
-                          : '/images/actor-placeholder.png'
-                        } 
-                        alt={actor.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="p-2">
-                      <h3 className="text-white text-sm font-medium truncate">{actor.name}</h3>
-                      <p className="text-gray-400 text-xs truncate">{actor.character}</p>
-                    </div>
-                  </div>
-                ))}
-                
-                {getMainCast().length === 0 && (
-                  <div className="col-span-full text-gray-400">
-                    Aucune information sur le casting disponible.
-                  </div>
-                )}
-              </div>
-            </section>
-            
-            {/* Recommandations */}
-            {recommendations.length > 0 && (
-              <section className="mb-8">
-                <h2 className="text-xl text-white font-semibold mb-4">Recommandations</h2>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {recommendations.slice(0, 8).map(item => (
-                    <MediaCard 
-                      key={item.id}
-                      item={item}
-                      type={mediaType}
-                    />
-                  ))}
+          {/* Acteurs principaux */}
+          <h3 className="text-lg text-white mb-4">Acteurs principaux</h3>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {getMainCast().length > 0 ? getMainCast().map(person => (
+              <div key={person.id} className="bg-background-light rounded-lg overflow-hidden">
+                <div className="aspect-[2/3] relative">
+                  <img 
+                    src={person.profile_path 
+                      ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+                      : '/images/profile-placeholder.png'
+                    } 
+                    alt={person.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              </section>
+                <div className="p-2">
+                  <h4 className="text-white font-medium text-sm truncate">{person.name}</h4>
+                  <p className="text-gray-400 text-xs truncate">{person.character}</p>
+                </div>
+              </div>
+            )) : (
+              <p className="text-gray-400 col-span-full">Aucune information sur le casting disponible.</p>
             )}
-            
-            {/* Section commentaires */}
-            <section>
-              <h2 className="text-xl text-white font-semibold mb-4">Commentaires</h2>
-              <CommentSection mediaId={id} mediaType={mediaType} />
-            </section>
           </div>
-        </div>
+        </section>
+        
+        {/* Recommandations */}
+        {recommendations.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-white mb-6">Vous pourriez aussi aimer</h2>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {recommendations.slice(0, 6).map(item => (
+                <MediaCard 
+                  key={item.id} 
+                  item={item} 
+                  type={mediaType} 
+                />
+              ))}
+            </div>
+            
+            {recommendations.length > 6 && (
+              <div className="mt-4 text-center">
+                <button className="text-primary hover:text-primary-light font-medium">
+                  Voir plus de recommandations
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+        
+        {/* Section commentaires */}
+        <section id="comments">
+          <h2 className="text-2xl font-bold text-white mb-6">Commentaires</h2>
+          <CommentSection mediaId={id} mediaType={mediaType} />
+        </section>
       </div>
     </div>
   );

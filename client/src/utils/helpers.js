@@ -5,17 +5,16 @@
  * @returns {Function} - La fonction avec debounce
  */
 export const debounce = (func, wait) => {
-  let timeoutId = null;
+  let timeout;
   
-  return (...args) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    
-    timeoutId = setTimeout(() => {
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
       func(...args);
-      timeoutId = null;
-    }, wait);
+    };
+    
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
   };
 };
 

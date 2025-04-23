@@ -93,6 +93,7 @@ const SeriesPage = () => {
             genres={genres}
             filters={filters}
             onFilterChange={handleFilterChange}
+            mediaType="tv"
           />
         </div>
         

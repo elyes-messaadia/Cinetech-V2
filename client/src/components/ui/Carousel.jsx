@@ -5,7 +5,6 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 const Carousel = ({ items = [] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [imageErrors, setImageErrors] = useState({});
   
   // Fonction pour passer à la slide suivante
   const nextSlide = useCallback(() => {
@@ -52,12 +51,6 @@ const Carousel = ({ items = [] }) => {
     return null;
   }
 
-  // Gestion des erreurs d'image
-  const handleImageError = (id) => {
-    console.log("Erreur de chargement d'image de fond pour l'item:", id);
-    setImageErrors(prev => ({ ...prev, [id]: true }));
-  };
-
   const getMediaType = (item) => {
     return item.title ? 'movie' : 'tv';
   };
@@ -69,24 +62,9 @@ const Carousel = ({ items = [] }) => {
   const getMediaTitle = (item) => {
     return item.title || item.name;
   };
-
-  // Styles de fond pour les cas où l'image est manquante
-  const getBackgroundStyle = (item) => {
-    const mediaId = getMediaId(item);
-    const hasBackdrop = item.backdrop_path && !imageErrors[mediaId];
-    
-    if (hasBackdrop) {
-      return { 
-        backgroundImage: `url(https://image.tmdb.org/t/p/original${item.backdrop_path})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      };
-    } else {
-      // Fond dégradé en cas d'absence d'image
-      return { 
-        background: 'linear-gradient(45deg, #1a1a1a 0%, #2e2e2e 100%)'
-      };
-    }
+  
+  const getBackdropUrl = (path) => {
+    return path ? `https://image.tmdb.org/t/p/original${path}` : '';
   };
 
   return (
@@ -101,11 +79,11 @@ const Carousel = ({ items = [] }) => {
           const mediaType = getMediaType(item);
           const mediaId = getMediaId(item);
           const title = getMediaTitle(item);
-          const hasBackdrop = item.backdrop_path && !imageErrors[mediaId];
+          const backdropUrl = getBackdropUrl(item.backdrop_path);
           
           return (
             <div 
-              key={mediaId}
+              key={index}
               className={`absolute inset-0 transition-opacity duration-1000 ${
                 index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
               }`}
@@ -113,16 +91,8 @@ const Carousel = ({ items = [] }) => {
               {/* Arrière-plan d'image avec gradient */}
               <div 
                 className="absolute inset-0 bg-cover bg-center"
-                style={getBackgroundStyle(item)}
+                style={{ backgroundImage: `url(${backdropUrl})` }}
               >
-                {hasBackdrop && (
-                  <img 
-                    src={`https://image.tmdb.org/t/p/original${item.backdrop_path}`}
-                    alt=""
-                    className="hidden"
-                    onError={() => handleImageError(mediaId)}
-                  />
-                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
               </div>
               
