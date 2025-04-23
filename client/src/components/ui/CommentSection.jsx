@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import commentService from '../../services/commentService';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -14,9 +14,13 @@ const CommentSection = ({ mediaId, mediaType }) => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [hasLoaded, setHasLoaded] = useState(false);
   
   // Fonction pour charger les commentaires et leurs réponses
   const loadComments = useCallback(async () => {
+    // Éviter les requêtes inutiles
+    if (loading && hasLoaded) return;
+    
     try {
       setLoading(true);
       setError(null);
@@ -24,25 +28,31 @@ const CommentSection = ({ mediaId, mediaType }) => {
       // Récupérer les commentaires depuis l'API
       const commentsData = await commentService.getMediaComments(mediaId, mediaType);
       
-      console.log("Commentaires chargés:", commentsData);
-      
       setComments(commentsData || []);
       setTotalPages(Math.ceil((commentsData?.length || 0) / 10) || 1);
+      setHasLoaded(true);
     } catch (err) {
       console.error('Erreur lors du chargement des commentaires:', err);
       setError('Une erreur est survenue lors du chargement des commentaires.');
     } finally {
       setLoading(false);
     }
-  });
+  }, [mediaId, mediaType, loading, hasLoaded]);
   
-  // Charger les commentaires lors du premier rendu et quand mediaId/mediaType change
+  // Charger les commentaires lors du premier rendu uniquement
   useEffect(() => {
-    loadComments();
-  }, [loadComments, mediaId, mediaType]);
+    if (!hasLoaded) {
+      loadComments();
+    }
+  }, [loadComments, hasLoaded]);
+  
+  // Réinitialiser l'état de chargement lorsque le mediaId change
+  useEffect(() => {
+    setHasLoaded(false);
+  }, [mediaId, mediaType]);
   
   // Soumettre un nouveau commentaire
-  const handleSubmitComment = async (e) => {
+  const handleSubmitComment = useCallback(async (e) => {
     e.preventDefault();
     
     if (!newComment.trim() || !isAuthenticated) return;
@@ -56,14 +66,11 @@ const CommentSection = ({ mediaId, mediaType }) => {
         is_spoiler: false
       };
       
-      console.log("Envoi du commentaire:", commentData);
-      
       // Envoyer le commentaire à l'API
-      const response = await commentService.createComment(commentData);
-      console.log("Réponse API:", response);
+      await commentService.createComment(commentData);
       
       // Recharger tous les commentaires pour s'assurer d'avoir les données à jour
-      await loadComments();
+      setHasLoaded(false);
       
       // Réinitialiser le formulaire
       setNewComment('');
@@ -73,21 +80,27 @@ const CommentSection = ({ mediaId, mediaType }) => {
       console.error('Erreur lors de l\'ajout du commentaire:', err);
       setError('Une erreur est survenue lors de l\'ajout du commentaire.');
     }
-  };
+  }, [newComment, isAuthenticated, mediaId, mediaType, replyingTo, setHasLoaded]);
   
   // Commencer à répondre à un commentaire
-  const handleReply = (commentId) => {
+  const handleReply = useCallback((commentId) => {
     if (!isAuthenticated) {
       alert('Vous devez être connecté pour répondre aux commentaires');
       return;
     }
     
     setReplyingTo(commentId);
-    document.getElementById('comment-form').scrollIntoView({ behavior: 'smooth' });
-  };
+    // Attendre que le DOM soit mis à jour avant de faire le scroll
+    setTimeout(() => {
+      const element = document.getElementById('comment-form');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  }, [isAuthenticated]);
   
   // Gérer les "j'aime" sur un commentaire
-  const handleLike = (commentId, isReply = false, parentId = null) => {
+  const handleLike = useCallback((commentId, isReply = false, parentId = null) => {
     if (!isAuthenticated) {
       alert('Vous devez être connecté pour aimer les commentaires');
       return;
@@ -118,18 +131,31 @@ const CommentSection = ({ mediaId, mediaType }) => {
     }
     
     // TODO: Implémenter l'API pour les likes
-  };
+  }, [isAuthenticated]);
   
   // Changer de page
-  const handlePageChange = (newPage) => {
+  const handlePageChange = useCallback((newPage) => {
     setPage(newPage);
-    window.scrollTo(0, document.getElementById('comments').offsetTop - 100);
-  };
+    const commentsSection = document.getElementById('comments');
+    if (commentsSection) {
+      window.scrollTo({
+        top: commentsSection.offsetTop - 100,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
   
   // Annuler la réponse
-  const cancelReply = () => {
+  const cancelReply = useCallback(() => {
     setReplyingTo(null);
-  };
+  }, []);
+  
+  // Filtrer les commentaires en fonction de la page active
+  const paginatedComments = useMemo(() => {
+    const startIndex = (page - 1) * 10;
+    const endIndex = startIndex + 10;
+    return comments.slice(startIndex, endIndex);
+  }, [comments, page]);
   
   return (
     <div className="bg-background-light rounded-lg p-6">
@@ -206,7 +232,7 @@ const CommentSection = ({ mediaId, mediaType }) => {
           </div>
         ) : (
           <div className="space-y-6">
-            {comments.map(comment => (
+            {paginatedComments.map(comment => (
               <div key={comment.id} className="border-b border-gray-700 pb-6 last:border-0">
                 {/* Commentaire principal */}
                 <div className="flex gap-3">

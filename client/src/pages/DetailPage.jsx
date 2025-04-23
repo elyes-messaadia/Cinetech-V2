@@ -303,17 +303,19 @@ const DetailPage = ({ mediaType }) => {
         </section>
         
         {/* Recommandations */}
-        {recommendations.length > 0 && (
+        {recommendations && recommendations.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-white mb-6">Vous pourriez aussi aimer</h2>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {recommendations.slice(0, 6).map(item => (
-                <MediaCard 
-                  key={item.id} 
-                  item={item} 
-                  type={mediaType} 
-                />
+                item && item.id ? (
+                  <MediaCard 
+                    key={item.id} 
+                    item={item} 
+                    type={mediaType} 
+                  />
+                ) : null
               ))}
             </div>
             

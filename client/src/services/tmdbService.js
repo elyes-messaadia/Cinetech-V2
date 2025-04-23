@@ -9,6 +9,59 @@ const tmdbApi = axios.create({
   }
 });
 
+// Système de cache simple pour éviter les appels redondants
+const cache = {
+  data: new Map(),
+  ttl: 5 * 60 * 1000, // 5 minutes en ms
+  
+  get: function(key) {
+    const item = this.data.get(key);
+    if (!item) return null;
+    
+    const now = Date.now();
+    if (now > item.expiry) {
+      this.data.delete(key);
+      return null;
+    }
+    
+    return item.value;
+  },
+  
+  set: function(key, value) {
+    const expiry = Date.now() + this.ttl;
+    this.data.set(key, { value, expiry });
+  },
+  
+  clear: function() {
+    this.data.clear();
+  }
+};
+
+// Intercepteur pour la gestion globale des erreurs
+tmdbApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Gérer les erreurs spécifiques de l'API
+    if (error.response) {
+      const status = error.response.status;
+      
+      if (status === 401) {
+        console.error('Erreur d\'authentification avec l\'API TMDb - vérifiez votre clé API');
+      } else if (status === 404) {
+        console.error('Ressource non trouvée sur l\'API TMDb');
+      } else if (status >= 500) {
+        console.error('Erreur serveur de l\'API TMDb');
+      }
+    } else if (error.request) {
+      console.error('Pas de réponse reçue de l\'API TMDb - vérifiez votre connexion internet');
+    } else {
+      console.error('Erreur dans la configuration de la requête:', error.message);
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 // Service pour les appels à l'API TMDb
 const tmdbService = {
   /**
@@ -17,11 +70,19 @@ const tmdbService = {
    * @returns {Promise} - Résultat de l'API
    */
   getTrending: async (timeWindow = 'week') => {
+    const cacheKey = `trending-${timeWindow}`;
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+    
     try {
       const response = await tmdbApi.get(`/trending/all/${timeWindow}`);
+      cache.set(cacheKey, response.data);
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des tendances:', error);
+      console.error(`Erreur lors de la récupération des tendances (${timeWindow}):`, error);
       throw error;
     }
   },
@@ -32,13 +93,21 @@ const tmdbService = {
    * @returns {Promise} - Résultat de l'API
    */
   getPopularMovies: async (page = 1) => {
+    const cacheKey = `popular-movies-${page}`;
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+    
     try {
       const response = await tmdbApi.get('/movie/popular', {
         params: { page }
       });
+      cache.set(cacheKey, response.data);
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des films populaires:', error);
+      console.error(`Erreur lors de la récupération des films populaires (page ${page}):`, error);
       throw error;
     }
   },
@@ -117,14 +186,35 @@ const tmdbService = {
    * @returns {Promise} - Résultat de l'API
    */
   getMovieDetails: async (id) => {
+    if (!id) {
+      throw new Error('ID du film non spécifié');
+    }
+    
+    const cacheKey = `movie-${id}`;
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+    
     try {
       const response = await tmdbApi.get(`/movie/${id}`, {
         params: {
           append_to_response: 'videos,credits,similar,recommendations'
         }
       });
+      
+      if (!response.data) {
+        throw new Error(`Aucune donnée retournée pour le film ${id}`);
+      }
+      
+      cache.set(cacheKey, response.data);
       return response.data;
     } catch (error) {
+      if (error.response && error.response.status === 404) {
+        console.error(`Film non trouvé (ID: ${id})`);
+        throw new Error(`Film non trouvé (ID: ${id})`);
+      }
       console.error(`Erreur lors de la récupération des détails du film ${id}:`, error);
       throw error;
     }
@@ -136,14 +226,35 @@ const tmdbService = {
    * @returns {Promise} - Résultat de l'API
    */
   getSeriesDetails: async (id) => {
+    if (!id) {
+      throw new Error('ID de la série non spécifié');
+    }
+    
+    const cacheKey = `tv-${id}`;
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+    
     try {
       const response = await tmdbApi.get(`/tv/${id}`, {
         params: {
           append_to_response: 'videos,credits,similar,recommendations'
         }
       });
+      
+      if (!response.data) {
+        throw new Error(`Aucune donnée retournée pour la série ${id}`);
+      }
+      
+      cache.set(cacheKey, response.data);
       return response.data;
     } catch (error) {
+      if (error.response && error.response.status === 404) {
+        console.error(`Série non trouvée (ID: ${id})`);
+        throw new Error(`Série non trouvée (ID: ${id})`);
+      }
       console.error(`Erreur lors de la récupération des détails de la série ${id}:`, error);
       throw error;
     }
