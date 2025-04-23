@@ -38,6 +38,14 @@ const favoriteService = {
   },
 
   /**
+   * Alias pour getUserFavorites pour compatibilité avec les composants existants
+   * @returns {Promise} Liste des favoris
+   */
+  getFavorites: async function() {
+    return this.getUserFavorites();
+  },
+
+  /**
    * Ajouter un média aux favoris
    * @param {number} mediaId - ID du média
    * @param {string} mediaType - Type du média (movie ou tv)

@@ -45,7 +45,7 @@ const ProfilePage = () => {
       if (!isAuthenticated) return;
       
       try {
-        const favorites = await favoriteService.getUserFavorites();
+        const favorites = await favoriteService.getFavorites();
         
         const movieCount = favorites.filter(fav => fav.mediaType === 'movie').length;
         const tvCount = favorites.filter(fav => fav.mediaType === 'tv').length;

@@ -67,7 +67,7 @@ const SearchBar = ({ onClose }) => {
     } else {
       setSuggestions({ movies: [], tvShows: [] });
     }
-  }, [query]);
+  }, [fetchSuggestions, query]);
 
   // Gestion du changement dans l'input
   const handleChange = (e) => {

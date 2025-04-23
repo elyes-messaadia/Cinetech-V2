@@ -240,6 +240,21 @@ const tmdbService = {
       throw error;
     }
   },
+
+  /**
+   * Récupérer les genres en fonction du type de média
+   * @param {string} type - Type de média ('movie' ou 'tv')
+   * @returns {Promise} - Liste des genres
+   */
+  getGenres: async (type) => {
+    if (type === 'movie') {
+      return tmdbService.getMovieGenres();
+    } else if (type === 'tv') {
+      return tmdbService.getTvGenres();
+    } else {
+      throw new Error('Type de média non valide. Utilisez "movie" ou "tv".');
+    }
+  },
   
   /**
    * Récupérer les commentaires d'un film ou d'une série

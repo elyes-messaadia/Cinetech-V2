@@ -4,7 +4,7 @@ import { StarIcon, HeartIcon } from '@heroicons/react/24/solid';
 import { HeartIcon as HeartOutlineIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 
-const MediaCard = ({ item, type }) => {
+const MediaCard = ({ item, type, showRating = false }) => {
   const { isAuthenticated, user: _user } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false); // À connecter avec l'API plus tard
@@ -60,7 +60,7 @@ const MediaCard = ({ item, type }) => {
         />
         
         {/* Badge de notation */}
-        {rating && (
+        {showRating && rating && (
           <div className="absolute top-2 left-2 bg-black/60 text-white text-xs py-1 px-2 rounded flex items-center">
             <StarIcon className="w-3 h-3 text-yellow-400 mr-1" />
             <span>{rating}</span>

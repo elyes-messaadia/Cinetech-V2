@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import commentService from '../../services/commentService';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -16,7 +16,7 @@ const CommentSection = ({ mediaId, mediaType }) => {
   const [totalPages, setTotalPages] = useState(0);
   
   // Fonction pour charger les commentaires et leurs réponses
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -34,12 +34,12 @@ const CommentSection = ({ mediaId, mediaType }) => {
     } finally {
       setLoading(false);
     }
-  };
+  });
   
   // Charger les commentaires lors du premier rendu et quand mediaId/mediaType change
   useEffect(() => {
     loadComments();
-  }, [mediaId, mediaType]);
+  }, [loadComments, mediaId, mediaType]);
   
   // Soumettre un nouveau commentaire
   const handleSubmitComment = async (e) => {
